@@ -100,7 +100,8 @@ public final class TranscribeService extends Service implements Transcriber.List
                 text = "Waiting for " + (name != null ? name : "its book") + " to be loaded";
             } else {
                 long[] pr = tr.progress(b);
-                pct = pr[1] > 0 ? (int) Math.round(100.0 * pr[0] / pr[1]) : -1; // rounded like the Read tab's label
+                pct = pr[1] > 0 ? (int) (1000 * pr[0] / pr[1]) : -1; // tenths of a percent
+                String pl = Transcriber.percentLabel(pr);
                 sub = b.folderName;
                 String chapter = chapterAt(b, tr.workFile(), tr.workFromMs());
                 title = chapter != null ? chapter : "Transcribing the whole book";
@@ -112,7 +113,7 @@ public final class TranscribeService extends Service implements Transcriber.List
                         break;
                     default:
                         String sp = tr.speedLabel();
-                        text = "Transcribing" + (pct >= 0 ? " · " + pct + "%" : "") + (sp != null ? " · " + sp : "");
+                        text = "Transcribing" + (pl.isEmpty() ? "" : " · " + pl) + (sp != null ? " · " + sp : "");
                 }
             }
             Notification n = notification(title, text, pct, sub);
@@ -146,7 +147,7 @@ public final class TranscribeService extends Service implements Transcriber.List
                 .addAction(new Notification.Action.Builder(null, "Stop", stop).build());
         if (text != null) b.setContentText(text);
         if (sub != null) b.setSubText(sub);
-        if (pct >= 0) b.setProgress(100, pct, false);
+        if (pct >= 0) b.setProgress(1000, pct, false);
         return b.build();
     }
 

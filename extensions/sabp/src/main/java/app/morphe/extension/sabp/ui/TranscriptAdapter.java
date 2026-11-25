@@ -173,9 +173,7 @@ final class TranscriptAdapter extends BaseAdapter {
     String progressLabel() {
         long[] pr = progress;
         if (pr[1] <= 0) return "";
-        double pct = 100.0 * pr[0] / pr[1];
-        String p = pct > 0 && pct < 1 ? "<1%" : Math.round(pct) + "%";
-        return span(pr[0]) + " of " + span(pr[1]) + " transcribed (" + p + ")";
+        return span(pr[0]) + " of " + span(pr[1]) + " transcribed (" + Transcriber.percentLabel(pr) + ")";
     }
 
     static String span(long ms) {

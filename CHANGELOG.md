@@ -6,7 +6,8 @@
   gives progress and speed ("Transcribing · 2% · 4.1× real time"), and the book name sits in the header.
 - **Book name fixed:** folders whose address ends in `/children` showed the word "children" instead of the book
   (notification, sharing). The name is now taken from before that part.
-- **Same percentage everywhere:** the notification rounded down (1.6% → 1%) while the Read tab rounds (2%). Both round now.
+- **Same percentage everywhere, with one decimal:** the notification cut 1.6% to 1% while the Read tab rounded it
+  to 2%. Both now show "1.6%", and the notification's bar moves in tenths of a percent.
 
 ## v0.11.1: steady whole-book notification
 

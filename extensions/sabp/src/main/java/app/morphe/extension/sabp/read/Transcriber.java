@@ -312,6 +312,12 @@ public final class Transcriber {
         return new long[]{done, total};
     }
 
+    /** Progress as "1.6%" (one decimal, not rounded up), shared by the Read tab and the notification. */
+    public static String percentLabel(long[] pr) {
+        if (pr[1] <= 0) return "";
+        return String.format(Locale.US, "%.1f%%", Math.floor(1000.0 * pr[0] / pr[1]) / 10);
+    }
+
     public FileTranscript transcript(String folderUri, String fileName) {
         return FileTranscript.load(dir(folderUri), fileName);
     }
