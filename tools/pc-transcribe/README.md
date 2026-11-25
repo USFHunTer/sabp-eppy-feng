@@ -46,3 +46,16 @@ repeated, short with a high no-speech probability, or all in `[...]` / `(...)`).
 ## Self-check (no GPU)
 
     uv run python -m unittest
+
+## Checking skipped passages
+
+To see whether the passages eppy marks "Not in the audiobook" really are missing from the audio, for a book folder
+with one audio file, its `.transcript.json` and its `.epub`:
+
+1. Run eppy's own matching on the PC (from the repo root, with the Android SDK in `ANDROID_HOME`):
+   `EPPY_AUDIT_DIR="<book folder>" EPPY_AUDIT_OUT=ui-tests/build/skip-audit ./gradlew -p ui-tests testDebugUnitTest --tests '*SkipAudit*'`
+   writes `skip-audit.json`.
+2. `uv run audit_skips.py "<book folder>" <skip-audit.json> <report.html>` transcribes each marked stretch again on
+   its own and writes a report: **false mark** (80%+ of the passage's words are in the audio), **probably skipped**
+   (half or fewer), or unclear, with the time in the audio file. The report quotes only each passage's first and last
+   words; keep it out of git all the same.

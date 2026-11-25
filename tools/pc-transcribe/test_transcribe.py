@@ -104,6 +104,18 @@ class TimelineTest(unittest.TestCase):
         self.assertEqual(tl.segs([[0, 100, "x", [[0, 100, "x"]]]]), [[0, 79, "x", [[0, 79, "x"]]]])
 
 
+class AuditTest(unittest.TestCase):
+    def test_verdicts_and_snippets(self):
+        import audit_skips as a
+        self.assertEqual(a.found_share("The cat sat. The dog!", a.norm("the dog the bird")), 0.75)
+        self.assertEqual([a.verdict(x) for x in (0.9, 0.8, 0.6, 0.5, 0.1)],
+                         ["false mark", "false mark", "unclear", "probably skipped", "probably skipped"])
+        self.assertEqual(a.ends(" ".join(str(i) for i in range(30)), 3), "0 1 2 … 27 28 29")
+        self.assertEqual(a.hms(3725.9), "1:02:05")
+        t = {"segs": [[0, 20000, "a b", [[0, 1, "a"], [1, 2, "b"]]], [0, 20000, "x", [[0, 1, "w"]] * 40]]}
+        self.assertEqual(len(a.sparse_segments(t)), 1)
+
+
 class LibraryTest(unittest.TestCase):
     def test_skip_rule_and_walk(self):
         import os
