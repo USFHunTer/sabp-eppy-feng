@@ -103,8 +103,8 @@ the transcript instead, and eppy imports it; matching and skipped passages still
    downloads the Whisper large-v3 model (about 3 GB).
 2. **Transcribe:** `uv run transcribe.py "D:\My audiobookss"` (a folder is searched recursively, or give one audio file).
    Each audio file gets `<audio name>.transcript.json` next to it; files that already have a newer one are skipped.
-   With the book's `.epub` in the same folder, its character names help the spelling. On an RTX 4090 an hour of audio
-   takes about 30 seconds.
+   With the book's `.epub` in the same folder, its character names help the spelling. On an RTX 4090 a 57-hour volume
+   takes about 37 minutes.
 3. **Copy** the `.transcript.json` files into the book's folder on the phone (next to its audio files).
 4. **Open the book in eppy** (its EPUB or text PDF must be paired). eppy imports the files when it loads the book's
    document ("Imported transcript for N file(s)"), switches transcription on for the book and shows 100%. If the book

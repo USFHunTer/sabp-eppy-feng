@@ -103,8 +103,8 @@ Driven by the developer through scrcpy on the user's phone.
 
 ## Device checklist: transcripts made on the PC (v0.12.0, not yet on a device)
 
-Verified without a device: the tool on the developer's RTX 4090 (about 115x real time, Volume 9 of the test book in
-one run), and the import, matching and size tests above.
+Verified without a device: the tool on the developer's RTX 4090 (Volume 9 of the test book, 56.9 h, in 37 min;
+its `dur` equals the container's length to the millisecond), and the import, matching and size tests above.
 
 On the phone, with Volume 9 of the test book:
 1. `Example Saga Volume 9 The Long Road.transcript.json` copied into the book's folder.

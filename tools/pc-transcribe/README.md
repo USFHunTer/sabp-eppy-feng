@@ -11,8 +11,7 @@ opens. See `../../.scratch/pc-transcribe/spec.md` and `../../docs/adr/0001-pc-tr
    folders itself. `pyproject.toml` asks uv for versions that ship Windows wheels, since some releases are Linux-only.
 3. The first run downloads the Whisper large-v3 model (about 3 GB) from Hugging Face into `~/.cache/huggingface`.
 
-Tested with Python 3.13, uv 0.11, an RTX 4090 and driver 621.14: about 115x real time (one hour of audio in about
-30 seconds).
+Tested with Python 3.13, uv 0.11, an RTX 4090 and driver 621.14: a 57-hour m4b in 37 minutes (91x real time).
 
 ## Use
 

@@ -3,8 +3,8 @@
 ## v0.12.0: transcripts made on the PC
 
 - **Transcribe on the PC, read along on the phone:** `tools/pc-transcribe` turns an audiobook into a
-  `<audio name>.transcript.json` file on a PC with an NVIDIA GPU (faster-whisper large-v3; a 57-hour volume takes about
-  half an hour on an RTX 4090, and it's more accurate than the phone's models). Copy the file into the book's folder on
+  `<audio name>.transcript.json` file on a PC with an NVIDIA GPU (faster-whisper large-v3; a 57-hour volume takes under
+  40 minutes on an RTX 4090, and it's more accurate than the phone's models). Copy the file into the book's folder on
   the phone. The next time eppy opens the book (with its EPUB or text PDF paired), it imports the file: transcription
   shows 100%, matching and skipped passages run on it, and "Transcribe the whole book" has nothing left to do.
   Everything stays local.
