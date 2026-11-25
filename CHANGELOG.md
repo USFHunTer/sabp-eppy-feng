@@ -5,8 +5,9 @@
 - **Transcribe on the PC, read along on the phone:** `tools/pc-transcribe` turns an audiobook into a
   `<audio name>.transcript.json` file on a PC with an NVIDIA GPU (faster-whisper large-v3; a 57-hour volume takes about
   half an hour on an RTX 4090, and it's more accurate than the phone's models). Copy the file into the book's folder on
-  the phone. The next time the Read tab opens the book, eppy imports it: transcription shows 100%, matching and skipped
-  passages run on it, and "Transcribe the whole book" has nothing left to do. Everything stays local.
+  the phone. The next time eppy opens the book (with its EPUB or text PDF paired), it imports the file: transcription
+  shows 100%, matching and skipped passages run on it, and "Transcribe the whole book" has nothing left to do.
+  Everything stays local.
 - **Checked before import:** the file must name one of the book's audio files, match its length within 2 seconds, be
   complete, and be in the current format. Anything else is ignored and noted in Diagnostics. A newer copy of the file
   is imported again; the same one isn't.

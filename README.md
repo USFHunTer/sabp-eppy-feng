@@ -106,8 +106,9 @@ the transcript instead, and eppy imports it; matching and skipped passages still
    With the book's `.epub` in the same folder, its character names help the spelling. On an RTX 4090 an hour of audio
    takes about 30 seconds.
 3. **Copy** the `.transcript.json` files into the book's folder on the phone (next to its audio files).
-4. **Open the book's Read tab.** eppy imports the files ("Imported transcript for N file(s)"), switches transcription on
-   for the book and shows 100%.
+4. **Open the book in eppy** (its EPUB or text PDF must be paired). eppy imports the files when it loads the book's
+   document ("Imported transcript for N file(s)"), switches transcription on for the book and shows 100%. If the book
+   was already open, switch to another book and back, or restart the app.
 
 More detail: [tools/pc-transcribe/README.md](tools/pc-transcribe/README.md).
 

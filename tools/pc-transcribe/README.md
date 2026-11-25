@@ -32,8 +32,9 @@ Tested with Python 3.13, uv 0.11, an RTX 4090 and driver 621.14: about 115x real
   memory than a short one.
 
 Then copy the `.transcript.json` files into the book's folder on the phone, next to its audio files, and open the
-book's Read tab: eppy imports them, shows "Imported transcript for N file(s)", switches transcription on for the book
-and shows 100%. The phone only imports a file that names one of the book's audio files, matches its length within
+book in eppy with its EPUB (or text PDF) paired. eppy imports them when it loads the book's document (opening the
+book, switching back to it, or restarting the app), shows "Imported transcript for N file(s)", switches transcription
+on for the book and shows 100%. The phone only imports a file that names one of the book's audio files, matches its length within
 2 seconds and is complete; anything else is noted in Settings → Diagnostics. A newer copy is imported again.
 
 ## The transcript file

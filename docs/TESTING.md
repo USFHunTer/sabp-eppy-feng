@@ -108,11 +108,12 @@ one run), and the import, matching and size tests above.
 
 On the phone, with Volume 9 of the test book:
 1. `Example Saga Volume 9 The Long Road.transcript.json` copied into the book's folder.
-2. Opening the Read tab shows "Imported transcript for 1 file(s)" once; transcription progress shows 100%.
+2. Opening the book (EPUB paired; restart eppy if it was already open) shows "Imported transcript for 1 file(s)"
+   once, and the Read tab's transcription progress shows 100%. Opening the Read tab again doesn't import again.
 3. "Transcribe the whole book" for this book is off and its notification is gone.
 4. The highlight follows the narration; skipped passages are marked.
 5. No crash or ANR while loading; note how long the first match takes.
-6. Copying a newer transcript file imports it again.
+6. Copying a newer transcript file imports it again the next time the book is opened (switch books or restart).
 
 ## Device checklist: built-in transcription (dev, not yet on a device)
 
