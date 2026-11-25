@@ -2,6 +2,7 @@
 import json
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace as NS
 
@@ -39,6 +40,39 @@ class FilterTest(unittest.TestCase):
         f = transcribe.Filter()
         f.convert([seg(0, 1, "Same.")])
         self.assertEqual(f.convert([seg(1, 2, "Same.")]), [])
+
+
+CHAPTER = """<?xml version="1.0"?><html><head><title>Tobin Mara Ilsa</title><style>p{}</style></head><body>
+<h1>Tobin and Mara and Ilsa</h1>
+<p>Then Tobin saw Mara. He told Mara and Ilsa that Tobin was fine; Tobin agreed.</p>
+<p>The NASA man met Tobin, Mara and Ilsa at the Bridge. Later Ilsa went to the Bridge.<br/>Wren said &ldquo;Hi&rdquo; to Mara and Ilsa, and then Wren and Jet met Wren&rsquo;s friend at the Bridge.</p>
+<p>A bridge is a road. We met Jet and Jet and Jet at Al&#8217;s place with Bo, Bo and Bo.</p>
+</body></html>"""
+
+
+class NamesPromptTest(unittest.TestCase):
+    def test_tiny_epub(self):
+        with tempfile.TemporaryDirectory() as d:
+            epub = Path(d) / "book.epub"
+            with zipfile.ZipFile(epub, "w") as z:
+                z.writestr("mimetype", "application/epub+zip")
+                z.writestr("OEBPS/ch1.xhtml", CHAPTER)
+            # Mara 5, Ilsa 4, Tobin 3 (sentence starts and the heading don't count); Wren only twice
+            # mid-sentence; Bridge also written as "bridge"; NASA all caps; Bo too short; Jet 4 times.
+            self.assertEqual(transcribe.book_prompt(Path(d)), "Mara, Ilsa, Jet, Tobin.")
+
+    def test_no_epub(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(transcribe.book_prompt(Path(d)))
+
+    def test_length_limit(self):
+        names = [f"Nam{chr(97 + i // 26)}{chr(97 + i % 26)}" for i in range(100)]  # Namaa, Namab, ...
+        paras = [(" ".join(f"x {n}" for _ in range(3)), False) for n in names]
+        p = transcribe.names_prompt(paras)
+        self.assertLessEqual(len(p), 381)
+        self.assertTrue(p.endswith("."))
+        self.assertTrue(p.startswith("Namaa, Namab, "))
+        self.assertEqual(len(p), 7 * 54 - 2 + 1)  # 54 five-letter names fit in 380 characters
 
 
 class WriteTest(unittest.TestCase):

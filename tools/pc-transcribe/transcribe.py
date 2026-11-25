@@ -7,8 +7,11 @@ on the phone. See ../../.scratch/pc-transcribe/spec.md.
 """
 import json
 import os
+import re
 import sys
 import time
+import zipfile
+from html.parser import HTMLParser
 from pathlib import Path
 
 SR = 16000
@@ -81,6 +84,103 @@ def pcm_pieces(path):
         yield np.concatenate(buf).astype(np.float32) / 32768.0
 
 
+# ---- names prompt, ported from TranscriptSync.namesPrompt (paragraphs split as in Xhtml.toParagraphs) -------------
+
+BLOCK = {"p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "blockquote", "section", "article", "tr", "dd", "dt",
+         "figcaption", "pre", "hr", "header", "footer", "aside", "body"}
+SKIP = {"script", "style", "head", "title"}
+WORD = re.compile(r"[^\W\d_](?:[^\W\d_]|['’-])*")  # \p{L}[\p{L}'’-]*
+SENTENCE_END = re.compile(r"[.!?:;\"“”]\s*$")
+
+
+class Paragraphs(HTMLParser):
+    """XHTML -> [(text, is_heading)]."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.out, self.buf, self.heading, self.skip = [], [], False, 0
+
+    def handle_starttag(self, tag, attrs):
+        self._tag(tag, False)
+
+    def handle_startendtag(self, tag, attrs):
+        if tag in BLOCK:
+            self._flush()
+            self.heading = False
+        elif tag == "br":
+            self.buf.append(" ")
+
+    def handle_endtag(self, tag):
+        self._tag(tag, True)
+
+    def _tag(self, tag, closing):
+        if tag in SKIP:
+            self.skip = max(0, self.skip - 1) if closing else self.skip + 1
+        elif self.skip:
+            pass
+        elif tag == "br":
+            self.buf.append(" ")
+        elif tag in BLOCK:
+            self._flush()
+            self.heading = not closing and len(tag) == 2 and tag[0] == "h" and tag[1].isdigit()
+
+    def handle_data(self, data):
+        if not self.skip:
+            self.buf.append(data)
+
+    def _flush(self):
+        s = " ".join("".join(self.buf).split())
+        if s:
+            self.out.append((s, self.heading))
+        self.buf = []
+
+    def close(self):
+        super().close()
+        self._flush()
+
+
+def epub_paragraphs(epub):
+    with zipfile.ZipFile(epub) as z:
+        for n in z.namelist():  # shortcut: zip order, not spine order; only ties in the prompt depend on it
+            if n.lower().endswith((".xhtml", ".html", ".htm")):
+                p = Paragraphs()
+                p.feed(z.read(n).decode("utf-8", errors="replace"))
+                p.close()
+                yield from p.out
+
+
+def names_prompt(paragraphs):
+    """Names and other capitalised words that the book never writes in lower case."""
+    caps, lower = {}, set()
+    for text, heading in paragraphs:
+        if heading:
+            continue
+        last_end, sentence_start = 0, True
+        for m in WORD.finditer(text):
+            if SENTENCE_END.search(text[last_end:m.start()]):
+                sentence_start = True
+            w = m.group()
+            last_end = m.end()
+            if w[0].islower():
+                lower.add(w.lower())
+            elif not sentence_start and len(w) > 2 and w != w.upper():
+                caps[w] = caps.get(w, 0) + 1
+            sentence_start = False
+    names = sorted((w for w, n in caps.items() if n >= 3 and w.lower() not in lower), key=lambda w: -caps[w])
+    s = ""
+    for w in names:
+        if len(s) + len(w) > 380:
+            break
+        s += (", " if s else "") + w
+    return s + "." if s else None
+
+
+def book_prompt(folder):
+    """The names prompt from the first .epub in the folder, or None."""
+    epubs = sorted(folder.glob("*.epub"))
+    return names_prompt(epub_paragraphs(epubs[0])) if epubs else None
+
+
 def transcript_path(audio):
     return audio.with_name(audio.stem + ".transcript.json")
 
@@ -142,9 +242,11 @@ def main(argv):
         print(__doc__)
         return 2
     audio = Path(argv[1])
+    prompt = book_prompt(audio.parent)
+    print(f"Names prompt: {prompt}")
     model = load_model()
     start = time.time()
-    t = transcribe_file(model, audio)
+    t = transcribe_file(model, audio, prompt)
     took = time.time() - start
     print(f"{audio.name}: {len(t['segs'])} segments, {t['dur'] / 3.6e6:.2f} h of audio in {took / 60:.1f} min "
           f"({t['dur'] / 1000 / max(took, 1e-9):.0f}x)")
