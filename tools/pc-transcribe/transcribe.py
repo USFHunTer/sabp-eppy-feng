@@ -6,6 +6,7 @@ Writes <audio name without extension>.transcript.json next to each audio file, i
 writes on the phone. A folder is searched recursively; audio whose transcript file is newer is skipped, and so are
 folders holding a .nomedia or .ignore file. See ../../.scratch/pc-transcribe/spec.md.
 """
+import bisect
 import json
 import os
 import re
@@ -65,7 +66,39 @@ def ms(seconds):
     return int(round(seconds * 1000))
 
 
-def pcm_pieces(path):
+class Timeline:
+    """
+    Decoded time -> container time, in ms. A decoder outputs every sample, but a joined m4b says some aren't played
+    (encoder delay at each chapter join: 7.7 s over a 57 h volume). The phone's player, seeks and own transcripts use
+    container time, so every time written to the transcript file is converted.
+    """
+
+    def __init__(self):
+        self.at, self.off = [0.0], [0.0]  # from decoded ms at[i] on, container = decoded + off[i]
+
+    def add(self, decoded_ms, container_ms):
+        off = container_ms - decoded_ms
+        if abs(off - self.off[-1]) >= 1:  # only where the offset changes (chapter joins), not per frame
+            self.at.append(decoded_ms)
+            self.off.append(off)
+
+    def __call__(self, decoded_ms):
+        return max(0, int(round(decoded_ms + self.off[bisect.bisect_right(self.at, decoded_ms) - 1])))
+
+    def frames(self, frames):
+        """Passes decoded frames through, noting where each one is in decoded and container time."""
+        pos = 0
+        for f in frames:
+            if f.time is not None:
+                self.add(pos * 1000 / f.sample_rate, f.time * 1000)
+            pos += f.samples
+            yield f
+
+    def segs(self, segs):
+        return [[self(a), self(b), text, [[self(w0), self(w1), w] for w0, w1, w in words]] for a, b, text, words in segs]
+
+
+def pcm_pieces(path, timeline):
     """Yields the audio as 16 kHz mono float32 arrays of about CHUNK_S seconds each."""
     import av
     import numpy as np
@@ -74,7 +107,8 @@ def pcm_pieces(path):
     resampler = av.audio.resampler.AudioResampler(format="s16", layout="mono", rate=SR)
     buf, n = [], 0
     with av.open(str(path), mode="r") as container:
-        frames = _resample_frames(_group_frames(_ignore_invalid_frames(container.decode(audio=0)), 500000), resampler)
+        decoded = timeline.frames(_ignore_invalid_frames(container.decode(audio=0)))
+        frames = _resample_frames(_group_frames(decoded, 500000), resampler)
         for frame in frames:
             a = frame.to_ndarray().reshape(-1)
             buf.append(a)
@@ -195,7 +229,8 @@ def transcribe_file(model, audio, prompt=None, progress=None):
     segs = []
     carry = np.zeros(0, dtype=np.float32)
     offset = 0  # samples before carry[0]
-    pieces = pcm_pieces(audio)
+    timeline = Timeline()
+    pieces = pcm_pieces(audio, timeline)
     piece = next(pieces, None)
     while piece is not None:
         nxt = next(pieces, None)
@@ -217,8 +252,8 @@ def transcribe_file(model, audio, prompt=None, progress=None):
         carry = buf[cut:]
         offset += cut
         piece = nxt
-    dur = ms((offset + len(carry)) / SR)
-    t = {"v": 1, "name": audio.name, "dur": dur, "covered": [[0, dur]], "segs": segs}
+    dur = timeline(1000 * (offset + len(carry)) / SR)
+    t = {"v": 1, "name": audio.name, "dur": dur, "covered": [[0, dur]], "segs": timeline.segs(segs)}
     write(transcript_path(audio), t)
     return t
 

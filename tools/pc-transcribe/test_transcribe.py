@@ -89,6 +89,21 @@ class WriteTest(unittest.TestCase):
 
 
 
+class TimelineTest(unittest.TestCase):
+    def test_container_time_from_frame_timestamps(self):
+        # 48 kHz frames of 1024 samples; at the join the container plays only 24 of one frame's samples.
+        frames, t = [], 0
+        for i in range(6):
+            frames.append(NS(time=t / 48000, samples=1024, sample_rate=48000))
+            t += 24 if i == 2 else 1024
+        tl = transcribe.Timeline()
+        self.assertEqual(len(list(tl.frames(frames))), 6)
+        self.assertEqual(tl.at, [0.0, 1024 * 3 * 1000 / 48000])  # one breakpoint, at the frame after the join
+        self.assertEqual(tl(10), 10)                              # before the join: unchanged
+        self.assertEqual(tl(128), 107)                            # end: 6144 decoded samples, 5144 in the container
+        self.assertEqual(tl.segs([[0, 100, "x", [[0, 100, "x"]]]]), [[0, 79, "x", [[0, 79, "x"]]]])
+
+
 class LibraryTest(unittest.TestCase):
     def test_skip_rule_and_walk(self):
         import os
