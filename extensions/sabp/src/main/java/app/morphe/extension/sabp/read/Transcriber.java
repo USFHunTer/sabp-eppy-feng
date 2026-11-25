@@ -207,7 +207,7 @@ public final class Transcriber {
         }
     }
 
-    private void saveBook(EppyBook b) {
+    void saveBook(EppyBook b) {
         try {
             JSONArray fs = new JSONArray();
             for (EppyBook.FileItem f : b.files) fs.put(new JSONArray().put(f.name).put(f.start).put(f.duration));
