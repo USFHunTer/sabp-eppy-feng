@@ -1,5 +1,16 @@
 # Release notes
 
+## v0.11.3: whole-book transcription keeps going on its own
+
+- **Doesn't stop when SABP closes its player:** the book's files and chapters are remembered while it's loaded, so
+  "Transcribe the whole book" carries on after nothing has played for a while. It still waits while another book is
+  loaded.
+- **Stays awake through short pauses:** while paused because the phone is warm, or after an error, the phone is kept
+  awake so the retry actually happens with the screen off. Paused for low battery, it lets the phone sleep.
+- **Watchdog:** every minute the background service checks the transcriber. A worker that ended is started again; one
+  that finished nothing for 10 minutes is replaced. If the crash guard switches transcription off, the notification
+  says so and has a **Try again** button.
+
 ## v0.11.2: clearer whole-book notification
 
 - **Shows what's being transcribed:** the notification's title is the chapter being transcribed, the line below

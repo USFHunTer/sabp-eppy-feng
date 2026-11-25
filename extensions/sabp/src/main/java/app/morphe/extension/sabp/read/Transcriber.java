@@ -171,6 +171,55 @@ public final class Transcriber {
         return prefs.getString("name:" + folderUri, null);
     }
 
+    /**
+     * The whole-book book's files and chapters, saved while it's loaded so the work goes on after
+     * SABP closes its player (nothing playing for a while). Null if never saved.
+     */
+    public EppyBook savedBook(String folderUri) {
+        String js = prefs.getString("book:" + folderUri, null);
+        if (js == null) return null;
+        try {
+            JSONObject o = new JSONObject(js);
+            EppyBook b = new EppyBook();
+            b.folderUri = folderUri;
+            b.folderName = EppyBook.lastSegment(folderUri);
+            JSONArray fs = o.getJSONArray("files");
+            for (int i = 0; i < fs.length(); i++) {
+                JSONArray a = fs.getJSONArray(i);
+                EppyBook.FileItem f = new EppyBook.FileItem();
+                f.name = a.getString(0);
+                f.start = a.getInt(1);
+                f.duration = a.getInt(2);
+                b.files.add(f);
+            }
+            JSONArray cs = o.getJSONArray("chapters");
+            for (int i = 0; i < cs.length(); i++) {
+                JSONArray a = cs.getJSONArray(i);
+                EppyBook.ChapterItem ch = new EppyBook.ChapterItem();
+                ch.title = a.getString(0);
+                ch.fileName = a.getString(1);
+                ch.positionInFile = a.getInt(2);
+                b.chapters.add(ch);
+            }
+            return b.files.isEmpty() ? null : b;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void saveBook(EppyBook b) {
+        try {
+            JSONArray fs = new JSONArray();
+            for (EppyBook.FileItem f : b.files) fs.put(new JSONArray().put(f.name).put(f.start).put(f.duration));
+            JSONArray cs = new JSONArray();
+            for (EppyBook.ChapterItem ch : b.chapters) cs.put(new JSONArray().put(ch.title != null ? ch.title : "").put(ch.fileName).put(ch.positionInFile));
+            String js = new JSONObject().put("files", fs).put("chapters", cs).toString();
+            if (!js.equals(prefs.getString("book:" + b.folderUri, null))) prefs.edit().putString("book:" + b.folderUri, js).apply();
+        } catch (Exception e) {
+            EppyDiag.log("transcribe", "save book: " + e.getClass().getSimpleName());
+        }
+    }
+
     /** "Transcribe the whole book": to the end, in the background. Off again when the book is done. */
     public void setWholeBook(String folderUri, String name, boolean on) {
         Set<String> s = wholeBooks();
@@ -178,6 +227,7 @@ public final class Transcriber {
         else s.remove(folderUri);
         SharedPreferences.Editor e = prefs.edit().putStringSet("whole", s);
         if (on && name != null) e.putString("name:" + folderUri, name);
+        if (!on) e.remove("book:" + folderUri);
         e.apply();
         if (on) setEnabled(folderUri, true);
         TranscribeService.sync(app);
@@ -364,10 +414,33 @@ public final class Transcriber {
         if (worker != null) worker.interrupt();
     }
 
+    private volatile int generation;
+    private volatile long lastDoneAt = SystemClock.elapsedRealtime();
+
+    /** When the worker last finished a piece or started working (elapsedRealtime), for the watchdog. */
+    public long lastProgressAt() {
+        return lastDoneAt;
+    }
+
+    /** Watchdog: the worker made no progress for too long. Abandon it and start a fresh one. */
+    public synchronized void restartWorker() {
+        EppyDiag.error("transcribe", "no progress for " + (SystemClock.elapsedRealtime() - lastDoneAt) / 60_000 + " min: restarting");
+        generation++; // the old thread notices and ends when it gets unstuck
+        Whisper.abort();
+        if (worker != null) worker.interrupt();
+        worker = null;
+        // A fresh engine: the old thread may still hold this one. shortcut: a truly stuck engine leaks its memory until the app restarts.
+        whisper = null;
+        whisperModel = null;
+        lastDoneAt = SystemClock.elapsedRealtime();
+        ensureRunning();
+    }
+
     private void loop() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_LOWEST);
+        final int gen = generation;
         long lastPos = -1;
-        while (!stop) {
+        while (!stop && gen == generation) {
             long sleep = 15_000;
             try {
                 sleep = step(lastPos);
@@ -379,6 +452,7 @@ public final class Transcriber {
                 set(State.ERROR, t.getClass().getSimpleName() + ": " + t.getMessage());
                 sleep = 60_000;
             }
+            if (gen != generation) return; // replaced by the watchdog: leave the engine to the new thread
             if (whisper != null && SystemClock.elapsedRealtime() - whisperUsedAt > 120_000) closeWhisper();
             try {
                 synchronized (wake) {
@@ -389,6 +463,7 @@ public final class Transcriber {
                 break;
             }
         }
+        if (gen != generation) return;
         closeWhisper();
         set(State.OFF, "");
     }
@@ -407,6 +482,10 @@ public final class Transcriber {
     /** One unit of work; returns how long to rest afterwards. */
     private long step(long lastPos) throws Exception {
         EppyBook b = EppyBook.current();
+        if (b != null && wholeBook(b.folderUri)) saveBook(b);
+        if (b == null) { // nothing loaded (SABP closed its player): carry on with a whole-book book
+            for (String f : wholeBooks()) if ((b = savedBook(f)) != null) break;
+        }
         if (b == null || !enabled(b.folderUri)) {
             set(State.WAITING, wholeBooks().isEmpty() ? "Waiting for a book with read-along" : "Waiting for its book to be loaded");
             return 20_000;
@@ -437,6 +516,7 @@ public final class Transcriber {
         }
         workFile = t.file;
         workFromMs = t.from;
+        lastDoneAt = SystemClock.elapsedRealtime(); // a piece takes 1-2 min at worst; the watchdog allows 10
         set(State.WORKING, t.file);
         long began = SystemClock.elapsedRealtime();
         // Whole book while it's playing: no rests, but only two threads so playback stays smooth and cool.
@@ -579,6 +659,7 @@ public final class Transcriber {
         ft.add(segs, t.from, coverTo);
         ft.save(dir(b.folderUri));
         ft.windows++;
+        lastDoneAt = SystemClock.elapsedRealtime();
         if (ft.firstGap(0) < 0 || ft.windows % 10 == 0) writeSrt(b, ft);
         notifyChanged();
         return true;

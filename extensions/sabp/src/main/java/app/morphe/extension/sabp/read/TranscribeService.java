@@ -9,8 +9,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
+import android.os.SystemClock;
 
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -21,12 +24,16 @@ import app.morphe.extension.sabp.EppyDiag;
 
 /**
  * Keeps "Transcribe the whole book" going when eppy is in the background and nothing is playing:
- * a foreground service with a notification (progress, Stop), and a wake lock only while it's
- * actually transcribing. Runs only while some book is in whole-book mode.
+ * a foreground service with a notification (progress, Stop). It keeps the phone awake while
+ * transcribing and through short pauses (warm, errors), not when paused for low battery. A
+ * watchdog checks every minute: a worker that died is started again, one that made no progress
+ * for 10 minutes is replaced. Runs only while some book is in whole-book mode.
  */
 public final class TranscribeService extends Service implements Transcriber.Listener {
     private static final String CHANNEL = "eppy_transcribe";
     private static final String ACTION_STOP = "app.morphe.extension.sabp.TRANSCRIBE_STOP";
+    private static final String ACTION_RETRY = "app.morphe.extension.sabp.TRANSCRIBE_RETRY";
+    private static final long STUCK_MS = 10 * 60_000L, TICK_MS = 60_000L;
     private static final int ID = 0x7EA1;
     private static final long LOCK_MS = 10 * 60_000L; // renewed on every update while working
 
@@ -36,6 +43,17 @@ public final class TranscribeService extends Service implements Transcriber.List
     private volatile boolean destroyed;
     private volatile Notification last;
     private static volatile boolean running;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable watchdog = new Runnable() {
+        @Override
+        public void run() {
+            if (destroyed) return;
+            if (tr.state() == Transcriber.State.WORKING && SystemClock.elapsedRealtime() - tr.lastProgressAt() > STUCK_MS) tr.restartWorker();
+            else tr.ensureRunning(); // starts a worker that ended (not one stopped after crashes)
+            onTranscriberChanged(); // renews the wake lock and the notification
+            handler.postDelayed(this, TICK_MS);
+        }
+    };
 
     /** Starts or stops the service to match whether any book is in whole-book mode. */
     static void sync(Context c) {
@@ -67,7 +85,8 @@ public final class TranscribeService extends Service implements Transcriber.List
             for (String f : tr.wholeBooks()) tr.setWholeBook(f, null, false);
             return START_NOT_STICKY;
         }
-        Notification n = last != null ? last : notification("Transcribing the whole book", null, -1, null);
+        if (intent != null && ACTION_RETRY.equals(intent.getAction())) tr.resetCrashes();
+        Notification n = last != null ? last : notification("Transcribing the whole book", null, -1, null, false);
         if (Build.VERSION.SDK_INT >= 34) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
         else startForeground(ID, n);
         if (tr.wholeBooks().isEmpty()) {
@@ -78,13 +97,18 @@ public final class TranscribeService extends Service implements Transcriber.List
         tr.ensureRunning();
         tr.kick();
         onTranscriberChanged();
+        handler.removeCallbacks(watchdog);
+        handler.postDelayed(watchdog, TICK_MS);
         return START_STICKY;
     }
 
     @Override
     public void onTranscriberChanged() {
         Transcriber.State s = tr.state();
-        if (s == Transcriber.State.WORKING) lock.acquire(LOCK_MS);
+        boolean crashed = tr.stoppedAfterCrash();
+        // Awake through short pauses too, or the "try again in 2 min" never comes while the screen is off.
+        boolean awake = !crashed && (s == Transcriber.State.WORKING || s == Transcriber.State.PAUSED_HEAT || s == Transcriber.State.ERROR);
+        if (awake) lock.acquire(LOCK_MS);
         else if (lock.isHeld()) lock.release();
         String detail = tr.stateDetail();
         if (destroyed) return;
@@ -92,12 +116,17 @@ public final class TranscribeService extends Service implements Transcriber.List
             Set<String> whole = tr.wholeBooks();
             if (whole.isEmpty()) return;
             EppyBook b = EppyBook.current();
+            if (b == null) for (String f : whole) if ((b = tr.savedBook(f)) != null) break;
             String title, text, sub = null;
             int pct = -1;
-            if (b == null || !whole.contains(b.folderUri)) {
-                String name = tr.bookName(whole.iterator().next());
+            boolean retry = false;
+            if (crashed) {
+                title = "Transcription stopped";
+                text = "Stopped after repeated problems";
+                retry = true;
+            } else if (b == null || !whole.contains(b.folderUri)) {
                 title = "Transcribing the whole book";
-                text = "Waiting for " + (name != null ? name : "its book") + " to be loaded";
+                text = b != null ? "Waiting while another book is loaded" : "Open the book once to continue";
             } else {
                 long[] pr = tr.progress(b);
                 pct = pr[1] > 0 ? (int) (1000 * pr[0] / pr[1]) : -1; // tenths of a percent
@@ -116,7 +145,7 @@ public final class TranscribeService extends Service implements Transcriber.List
                         text = "Transcribing" + (pl.isEmpty() ? "" : " · " + pl) + (sp != null ? " · " + sp : "");
                 }
             }
-            Notification n = notification(title, text, pct, sub);
+            Notification n = notification(title, text, pct, sub, retry);
             last = n;
             if (!destroyed) getSystemService(NotificationManager.class).notify(ID, n);
         });
@@ -134,7 +163,7 @@ public final class TranscribeService extends Service implements Transcriber.List
         return title != null && !title.trim().isEmpty() ? title.trim() : null;
     }
 
-    private Notification notification(String title, String text, int pct, String sub) {
+    private Notification notification(String title, String text, int pct, String sub, boolean retry) {
         Intent open = getPackageManager().getLaunchIntentForPackage(getPackageName());
         PendingIntent tap = open == null ? null : PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE);
         PendingIntent stop = PendingIntent.getService(this, 1, new Intent(this, TranscribeService.class).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE);
@@ -145,6 +174,10 @@ public final class TranscribeService extends Service implements Transcriber.List
                 .setOnlyAlertOnce(true)
                 .setContentIntent(tap)
                 .addAction(new Notification.Action.Builder(null, "Stop", stop).build());
+        if (retry) {
+            PendingIntent again = PendingIntent.getService(this, 2, new Intent(this, TranscribeService.class).setAction(ACTION_RETRY), PendingIntent.FLAG_IMMUTABLE);
+            b.addAction(new Notification.Action.Builder(null, "Try again", again).build());
+        }
         if (text != null) b.setContentText(text);
         if (sub != null) b.setSubText(sub);
         if (pct >= 0) b.setProgress(1000, pct, false);
@@ -155,6 +188,7 @@ public final class TranscribeService extends Service implements Transcriber.List
     public void onDestroy() {
         destroyed = true;
         running = false;
+        handler.removeCallbacks(watchdog);
         tr.removeListener(this);
         if (lock.isHeld()) lock.release();
         io.shutdown();

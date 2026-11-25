@@ -102,7 +102,7 @@ Each comes with Retry / Choose another file / Remove pairing.
   opens the microphone, but Android may still show its microphone indicator while recognition runs.
 - **Read along never uploads** documents or audio.
 - **Transcribe the whole book** runs as a foreground service with a notification (progress, Stop) and keeps the
-  phone awake only while it's transcribing. That's why the app declares the foreground-service, wake-lock and
+  phone awake only while it's transcribing or briefly paused (warm phone, error), never while paused for low battery. That's why the app declares the foreground-service, wake-lock and
   notification permissions. It's only running while you've turned it on for a book.
 - **Book information lookups are off by default.** When on, only the title and author of the book you look up go to the
   providers you enabled.
