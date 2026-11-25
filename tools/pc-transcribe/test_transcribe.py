@@ -88,5 +88,31 @@ class WriteTest(unittest.TestCase):
         self.assertEqual(transcribe.transcript_path(Path("x/Book One.m4b")), Path("x/Book One.transcript.json"))
 
 
+
+class LibraryTest(unittest.TestCase):
+    def test_skip_rule_and_walk(self):
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "b1").mkdir()
+            (d / "b2").mkdir()
+            (d / "skip").mkdir()
+            old, new = d / "b1" / "Old.m4b", d / "b2" / "New.MP3"
+            for p in (old, new, d / "skip" / "x.m4a", d / "b1" / "cover.jpg"):
+                p.write_bytes(b"")
+            (d / "skip" / ".ignore").write_bytes(b"")
+            self.assertEqual(transcribe.find_audio(d), [old, new])
+            self.assertEqual(transcribe.find_audio(old), [old])
+            # Older transcript file: redone. Newer one: skipped.
+            for audio, t_age in ((old, -100), (new, +100)):
+                t = transcribe.transcript_path(audio)
+                t.write_text("{}")
+                a = audio.stat().st_mtime
+                os.utime(t, (a + t_age, a + t_age))
+            self.assertTrue(transcribe.needs_work(old))
+            self.assertFalse(transcribe.needs_work(new))
+            self.assertTrue(transcribe.needs_work(d / "skip" / "x.m4a"))  # no transcript file at all
+
+
 if __name__ == "__main__":
     unittest.main()

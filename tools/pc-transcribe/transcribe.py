@@ -1,9 +1,10 @@
-"""Transcribe an audio file into a transcript file eppy imports.
+"""Transcribe audiobooks into transcript files eppy imports.
 
-    uv run transcribe.py <audio file>
+    uv run transcribe.py <audio file or folder>
 
-Writes <audio name without extension>.transcript.json next to the audio, in the JSON FileTranscript.save writes
-on the phone. See ../../.scratch/pc-transcribe/spec.md.
+Writes <audio name without extension>.transcript.json next to each audio file, in the JSON FileTranscript.save
+writes on the phone. A folder is searched recursively; audio whose transcript file is newer is skipped, and so are
+folders holding a .nomedia or .ignore file. See ../../.scratch/pc-transcribe/spec.md.
 """
 import json
 import os
@@ -14,6 +15,7 @@ import zipfile
 from html.parser import HTMLParser
 from pathlib import Path
 
+AUDIO = (".m4b", ".m4a", ".mp3", ".ogg", ".opus", ".flac")
 SR = 16000
 CHUNK_S = 30 * 60  # audio is decoded and transcribed in pieces of about this length, so a 57 h book fits in RAM
 TAIL_S = 60  # segments ending in the last minute of a piece are redone with the next piece (no cut words)
@@ -237,20 +239,71 @@ def load_model():
     return BatchedInferencePipeline(model=WhisperModel("large-v3", device="cuda", compute_type="float16"))
 
 
+def probe_ms(audio):
+    """Container duration for the progress line only (the transcript's dur comes from the decoded audio)."""
+    import av
+    try:
+        with av.open(str(audio)) as c:
+            return max(1, (c.duration or 0) // 1000)
+    except Exception:
+        return 1
+
+
+def find_audio(path):
+    if path.is_file():
+        return [path]
+    out = []
+    for root, dirs, files in os.walk(path):
+        if ".nomedia" in files or ".ignore" in files:
+            dirs.clear()
+            continue
+        dirs.sort()
+        out += [Path(root) / f for f in sorted(files) if f.lower().endswith(AUDIO)]
+    return out
+
+
+def needs_work(audio):
+    t = transcript_path(audio)
+    return not (t.is_file() and t.stat().st_mtime > audio.stat().st_mtime)
+
+
 def main(argv):
     if len(argv) != 2:
         print(__doc__)
         return 2
-    audio = Path(argv[1])
-    prompt = book_prompt(audio.parent)
-    print(f"Names prompt: {prompt}")
+    path = Path(argv[1])
+    if not path.exists():
+        print(f"Not found: {path}")
+        return 2
+    todo = [a for a in find_audio(path) if needs_work(a)]
+    print(f"{len(todo)} audio file(s) to transcribe")
+    if not todo:
+        return 0
     model = load_model()
-    start = time.time()
-    t = transcribe_file(model, audio, prompt)
-    took = time.time() - start
-    print(f"{audio.name}: {len(t['segs'])} segments, {t['dur'] / 3.6e6:.2f} h of audio in {took / 60:.1f} min "
-          f"({t['dur'] / 1000 / max(took, 1e-9):.0f}x)")
-    return 0
+    prompts, failed = {}, 0
+    try:
+        for audio in todo:
+            if audio.parent not in prompts:
+                prompts[audio.parent] = book_prompt(audio.parent)
+                print(f"{audio.parent.name}: names prompt: {prompts[audio.parent]}")
+            start = time.time()
+            total = probe_ms(audio)
+
+            def progress(t_ms, start=start, audio=audio, total=total):
+                print(f"\r{audio.name}: {100 * t_ms / total:.0f}%, {time.time() - start:.0f} s", end="", flush=True)
+
+            try:
+                t = transcribe_file(model, audio, prompts[audio.parent], progress)
+                took = time.time() - start
+                print(f"\r{audio.name}: 100%, {t['dur'] / 3.6e6:.2f} h in {took / 60:.1f} min "
+                      f"({t['dur'] / 1000 / max(took, 1e-9):.0f}x), {len(t['segs'])} segments")
+            except Exception as e:  # one bad file doesn't stop the library
+                failed += 1
+                print(f"\n{audio.name}: FAILED: {e!r}")
+    except KeyboardInterrupt:
+        print("\nStopped. The file in progress has no transcript file.")
+        return 130
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":
