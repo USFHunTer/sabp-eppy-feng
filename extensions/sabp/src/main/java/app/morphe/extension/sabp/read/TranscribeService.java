@@ -67,7 +67,7 @@ public final class TranscribeService extends Service implements Transcriber.List
             for (String f : tr.wholeBooks()) tr.setWholeBook(f, null, false);
             return START_NOT_STICKY;
         }
-        Notification n = last != null ? last : notification("Transcribing the whole book", null, -1);
+        Notification n = last != null ? last : notification("Transcribing the whole book", null, -1, null);
         if (Build.VERSION.SDK_INT >= 34) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
         else startForeground(ID, n);
         if (tr.wholeBooks().isEmpty()) {
@@ -92,7 +92,7 @@ public final class TranscribeService extends Service implements Transcriber.List
             Set<String> whole = tr.wholeBooks();
             if (whole.isEmpty()) return;
             EppyBook b = EppyBook.current();
-            String title, text;
+            String title, text, sub = null;
             int pct = -1;
             if (b == null || !whole.contains(b.folderUri)) {
                 String name = tr.bookName(whole.iterator().next());
@@ -100,9 +100,10 @@ public final class TranscribeService extends Service implements Transcriber.List
                 text = "Waiting for " + (name != null ? name : "its book") + " to be loaded";
             } else {
                 long[] pr = tr.progress(b);
-                pct = pr[1] > 0 ? (int) (100 * pr[0] / pr[1]) : -1;
-                String name = tr.bookName(b.folderUri);
-                title = name != null ? name : b.folderName;
+                pct = pr[1] > 0 ? (int) Math.round(100.0 * pr[0] / pr[1]) : -1; // rounded like the Read tab's label
+                sub = b.folderName;
+                String chapter = chapterAt(b, tr.workFile(), tr.workFromMs());
+                title = chapter != null ? chapter : "Transcribing the whole book";
                 switch (s) {
                     case PAUSED_BATTERY:
                     case PAUSED_HEAT:
@@ -110,16 +111,29 @@ public final class TranscribeService extends Service implements Transcriber.List
                         text = detail;
                         break;
                     default:
-                        text = "Transcribing" + (pct >= 0 ? " · " + pct + "%" : "");
+                        String sp = tr.speedLabel();
+                        text = "Transcribing" + (pct >= 0 ? " · " + pct + "%" : "") + (sp != null ? " · " + sp : "");
                 }
             }
-            Notification n = notification(title, text, pct);
+            Notification n = notification(title, text, pct, sub);
             last = n;
             if (!destroyed) getSystemService(NotificationManager.class).notify(ID, n);
         });
     }
 
-    private Notification notification(String title, String text, int pct) {
+    /** Title of the chapter that contains a file position, or null. */
+    static String chapterAt(EppyBook b, String file, long ms) {
+        if (file == null) return null;
+        String title = null;
+        for (EppyBook.ChapterItem ch : b.chapters) {
+            if (!file.equals(ch.fileName)) continue;
+            if (ch.positionInFile * 1000L > ms) break;
+            title = ch.title;
+        }
+        return title != null && !title.trim().isEmpty() ? title.trim() : null;
+    }
+
+    private Notification notification(String title, String text, int pct, String sub) {
         Intent open = getPackageManager().getLaunchIntentForPackage(getPackageName());
         PendingIntent tap = open == null ? null : PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE);
         PendingIntent stop = PendingIntent.getService(this, 1, new Intent(this, TranscribeService.class).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE);
@@ -131,6 +145,7 @@ public final class TranscribeService extends Service implements Transcriber.List
                 .setContentIntent(tap)
                 .addAction(new Notification.Action.Builder(null, "Stop", stop).build());
         if (text != null) b.setContentText(text);
+        if (sub != null) b.setSubText(sub);
         if (pct >= 0) b.setProgress(100, pct, false);
         return b.build();
     }

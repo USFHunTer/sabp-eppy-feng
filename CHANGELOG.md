@@ -1,5 +1,13 @@
 # Release notes
 
+## v0.11.2: clearer whole-book notification
+
+- **Shows what's being transcribed:** the notification's title is the chapter being transcribed, the line below
+  gives progress and speed ("Transcribing · 2% · 4.1× real time"), and the book name sits in the header.
+- **Book name fixed:** folders whose address ends in `/children` showed the word "children" instead of the book
+  (notification, sharing). The name is now taken from before that part.
+- **Same percentage everywhere:** the notification rounded down (1.6% → 1%) while the Read tab rounds (2%). Both round now.
+
 ## v0.11.1: steady whole-book notification
 
 - **Fixed the flashing progress bar** in the "Transcribe the whole book" notification. The background service and the

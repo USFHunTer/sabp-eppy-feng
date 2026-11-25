@@ -71,6 +71,8 @@ public final class Transcriber {
     private volatile State state = State.OFF;
     private volatile String stateDetail = "";
     private volatile double speedRatio; // processing time / audio time, measured
+    private volatile String workFile;   // what the window being transcribed is, for the notification
+    private volatile long workFromMs;
     private Whisper whisper;
     private String whisperModel;
     private long whisperUsedAt;
@@ -206,6 +208,15 @@ public final class Transcriber {
 
     public String stateDetail() {
         return stateDetail;
+    }
+
+    /** File and position (ms) of the piece being transcribed now, or null. */
+    public String workFile() {
+        return workFile;
+    }
+
+    public long workFromMs() {
+        return workFromMs;
     }
 
     /** Measured processing speed as "×N real time", or null before the first window. */
@@ -418,6 +429,8 @@ public final class Transcriber {
             set(all ? State.DONE : State.AHEAD, all ? "The whole book is transcribed" : "Ahead of you; more while charging");
             return 30_000;
         }
+        workFile = t.file;
+        workFromMs = t.from;
         set(State.WORKING, t.file);
         long began = SystemClock.elapsedRealtime();
         // Whole book while it's playing: no rests, but only two threads so playback stays smooth and cool.

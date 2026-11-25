@@ -285,6 +285,8 @@ public final class EppyBook {
     public static String lastSegment(String s) {
         if (s == null) return "";
         String d = android.net.Uri.decode(s);
+        // A folder's "list its files" address ends in /children (DocumentsContract); the name is before it.
+        if (d.endsWith("/children") && d.length() > 9) d = d.substring(0, d.length() - 9);
         int slash = Math.max(d.lastIndexOf('/'), d.lastIndexOf(':'));
         return slash >= 0 && slash < d.length() - 1 ? d.substring(slash + 1) : d;
     }
