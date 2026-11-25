@@ -70,6 +70,21 @@ change, and publishes images, test XML and the Gradle log to the `ui-results` br
 These are real layout and touch checks, but on layoutlib, not a phone: they don't replace the device
 checklist (spec section 18), which still hasn't been run by the developer.
 
+Read-along logic tests in `ui-tests/src/test/kotlin/.../read/` (JVM, no rendering):
+
+- **WholeBookTest:** the remembered whole-book book and the progress label.
+- **SkippedPassageTest:** `TranscriptSync.skipped` around a jump, including a hyphenated word heard as one word.
+- **PcImportTest** (v0.12.0): importing a transcript file made on the PC gives 100%; a wrong name, a length more than
+  2 s off, format version 2, an incomplete file and broken JSON aren't imported; a partial phone transcript is
+  replaced; only a newer file is imported again.
+- **PcImportMatchTest:** the imported fixture matched to its text finds exactly one skipped passage, the one left out
+  of the audio. The fixture (`ui-tests/src/test/resources/pc-transcribe/`) is real output of `tools/pc-transcribe` on
+  the opening of *A Christmas Carol* spoken by Windows' speech synthesizer, with 63 words left out.
+- **LargeTranscriptTest:** a made-up 500k-word, 57-hour transcript: 19.5 MB, cold load 246 ms and +50 MB heap, one
+  full match 3.1 s on the developer's PC. Reports only.
+
+The PC tool has its own self-check without a GPU: `uv run python -m unittest` in `tools/pc-transcribe`.
+
 ## Device session 1 (2026-10-24, an Android phone, Android 16 / API 36, SABP 11.7.8 Hooman build, eppy 0.7.0)
 
 Driven by the developer through scrcpy on the user's phone.
@@ -85,6 +100,19 @@ Driven by the developer through scrcpy on the user's phone.
 | Player title / chapter line | **fail** → fixed in 0.8.1 (author shown as title) |
 | Seek bar on a 33 h single-file book | **fail** → fixed in 0.8.1 (now per chapter) |
 
+
+## Device checklist: transcripts made on the PC (v0.12.0, not yet on a device)
+
+Verified without a device: the tool on the developer's RTX 4090 (about 115x real time, Volume 9 of the test book in
+one run), and the import, matching and size tests above.
+
+On the phone, with Volume 9 of the test book:
+1. `Example Saga Volume 9 The Long Road.transcript.json` copied into the book's folder.
+2. Opening the Read tab shows "Imported transcript for 1 file(s)" once; transcription progress shows 100%.
+3. "Transcribe the whole book" for this book is off and its notification is gone.
+4. The highlight follows the narration; skipped passages are marked.
+5. No crash or ANR while loading; note how long the first match takes.
+6. Copying a newer transcript file imports it again.
 
 ## Device checklist: built-in transcription (dev, not yet on a device)
 

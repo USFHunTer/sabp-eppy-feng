@@ -1,5 +1,20 @@
 # Release notes
 
+## v0.12.0: transcripts made on the PC
+
+- **Transcribe on the PC, read along on the phone:** `tools/pc-transcribe` turns an audiobook into a
+  `<audio name>.transcript.json` file on a PC with an NVIDIA GPU (faster-whisper large-v3; a 57-hour volume takes about
+  half an hour on an RTX 4090, and it's more accurate than the phone's models). Copy the file into the book's folder on
+  the phone. The next time the Read tab opens the book, eppy imports it: transcription shows 100%, matching and skipped
+  passages run on it, and "Transcribe the whole book" has nothing left to do. Everything stays local.
+- **Checked before import:** the file must name one of the book's audio files, match its length within 2 seconds, be
+  complete, and be in the current format. Anything else is ignored and noted in Diagnostics. A newer copy of the file
+  is imported again; the same one isn't.
+- **The phone's transcriber can't overwrite an import:** a piece it was transcribing when the import happened is
+  dropped.
+- **Skipped passages are tighter:** a hyphenated word the recogniser writes as one word ("door-nail" as "doornail") no
+  longer stops the narrated words next to a skip from being recognised, which could mark a few narrated words red.
+
 ## v0.11.3: whole-book transcription keeps going on its own
 
 - **Doesn't stop when SABP closes its player:** the book's files and chapters are remembered while it's loaded, so

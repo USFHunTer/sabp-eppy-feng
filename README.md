@@ -93,6 +93,24 @@ Pair an EPUB or PDF with an audiobook (player sheet → **Read along** → *Choo
 *No matching passage found*, *Match confidence too low*, *Language model unavailable*, *Speech recognition unavailable*.
 Each comes with Retry / Choose another file / Remove pairing.
 
+### Transcribe on the PC
+
+The phone's own transcription is slow for a long book (days for a 57-hour volume). A PC with an NVIDIA GPU can make
+the transcript instead, and eppy imports it; matching and skipped passages still run on the phone.
+
+1. **Set up once (Windows):** install [uv](https://docs.astral.sh/uv/) and a current NVIDIA driver, then run `uv sync`
+   in `tools/pc-transcribe`. The CUDA libraries come as pip packages; no CUDA Toolkit is needed. The first run
+   downloads the Whisper large-v3 model (about 3 GB).
+2. **Transcribe:** `uv run transcribe.py "D:\My audiobookss"` (a folder is searched recursively, or give one audio file).
+   Each audio file gets `<audio name>.transcript.json` next to it; files that already have a newer one are skipped.
+   With the book's `.epub` in the same folder, its character names help the spelling. On an RTX 4090 an hour of audio
+   takes about 30 seconds.
+3. **Copy** the `.transcript.json` files into the book's folder on the phone (next to its audio files).
+4. **Open the book's Read tab.** eppy imports the files ("Imported transcript for N file(s)"), switches transcription on
+   for the book and shows 100%.
+
+More detail: [tools/pc-transcribe/README.md](tools/pc-transcribe/README.md).
+
 ## Privacy and permissions
 
 - **The microphone permission is only added if you turn on "Read-along speech matching"** in the patch options, and
