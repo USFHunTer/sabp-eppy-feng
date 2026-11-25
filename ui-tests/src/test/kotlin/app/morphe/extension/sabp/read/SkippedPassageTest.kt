@@ -37,6 +37,15 @@ class SkippedPassageTest {
     }
 
     @Test
+    fun aPassageReadInAnotherOrderIsNotASkip() {
+        // Text 20..119 narrated, but its two halves swapped: the word-by-word walk stops at once.
+        val heard = (0 until 20).map { "w$it" } + (70 until 120).map { "w$it" } + (20 until 70).map { "w$it" } +
+                (120 until 140).map { "w$it" }
+        val chain = listOf(cand(0.0, 5.0, 0, 13, 0, 13), cand(50.0, 55.0, 126, 139, 126, 139))
+        assertTrue(TranscriptSync.skipped(text, chain, heard).isEmpty())
+    }
+
+    @Test
     fun audioNotTranscribedYetIsNotASkip() {
         val chain = listOf(cand(0.0, 5.0, 0, 13, 0, 13), cand(300.0, 305.0, 126, 139, 27, 40))
         assertTrue(TranscriptSync.skipped(text, chain, heard).isEmpty())

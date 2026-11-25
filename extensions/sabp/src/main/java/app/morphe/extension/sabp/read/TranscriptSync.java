@@ -139,9 +139,28 @@ final class TranscriptSync {
                 else if (a < z && heard.get(j).equals(text[z - 1] + text[z])) { j--; z -= 2; }
                 else break;
             }
-            if (z - a + 1 >= MIN_SKIP) out.add(new int[]{a, z});
+            if (z - a + 1 >= MIN_SKIP && !mostlyHeard(text, a, z, heard, i, j)) out.add(new int[]{a, z});
         }
         return out;
+    }
+
+    /**
+     * True if most of text[a..z] is among heard[i..j]: the narrator read it, in another order or with edits
+     * (the word-by-word walk above gives up at the first difference).
+     */
+    static boolean mostlyHeard(String[] text, int a, int z, List<String> heard, int i, int j) {
+        if (i > j) return false;
+        HashMap<String, Integer> pool = new HashMap<>();
+        for (int k = i; k <= j; k++) pool.merge(heard.get(k), 1, Integer::sum);
+        int found = 0;
+        for (int k = a; k <= z; k++) {
+            Integer n = pool.get(text[k]);
+            if (n != null && n > 0) {
+                found++;
+                pool.put(text[k], n - 1);
+            }
+        }
+        return found >= 0.6 * (z - a + 1);
     }
 
     /** Heaviest chain with increasing time and text position. */

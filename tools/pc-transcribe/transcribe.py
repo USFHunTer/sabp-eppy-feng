@@ -23,7 +23,9 @@ TAIL_S = 60  # segments ending in the last minute of a piece are redone with the
 OVERLAP_S = 30  # the next piece starts this much before the cut; only words after the cut are kept from it
 GAP_S = 4.0  # a pause this long between words in narration is usually speech Whisper left out
 SPARSE_WPS, SPARSE_MIN_S = 1.2, 8.0  # a segment this long with fewer words per second probably lost some
-REDO_PAD_S, REDO_MAX_S = 5.0, 30.0  # context around a stretch done again; longer pauses are real breaks
+REDO_MAX_S = 30.0  # longer pauses are real breaks
+REDO_PADS_S = (5.0, 10.0, 15.0)  # context around a stretch done again, tried in turn
+REDO_ENOUGH_WPS = 1.5  # words per second that count as the stretch recovered (narration is about 2.6)
 
 
 def add_cuda_dlls():
@@ -271,14 +273,35 @@ def stretches(segs, t0, t1):
     return sorted(out)
 
 
+def loud(buf, a, b):
+    """True if [a, b) (seconds) sounds like speech, not a pause: the loudest 10% of 50 ms frames above -38 dBFS.
+    Narration measured -14 to -25 dB, the pauses between chapters below -40 dB."""
+    import numpy as np
+    x = buf[int(a * SR):int(b * SR)]
+    n = len(x) // 800 * 800
+    if n == 0:
+        return False
+    frames = x[:n].reshape(-1, 800)
+    return float(np.percentile(20 * np.log10(np.sqrt((frames ** 2).mean(1)) + 1e-9), 90)) > -38
+
+
 def redo(model, buf, segs, prompt, t0, t1):
     """Transcribes the suspicious stretches of [t0, t1) again on their own and puts in what was missing."""
     out = list(segs)
     for a, b in stretches(segs, t0, t1):
-        lo, hi = max(0.0, a - REDO_PAD_S), min(len(buf) / SR, b + REDO_PAD_S)
-        found, _ = model.transcribe(buf[int(lo * SR):int(hi * SR)], language="en", word_timestamps=True,
-                                    vad_filter=True, initial_prompt=prompt, batch_size=16)
-        new = [w for s in shifted(list(found), lo) for w in s.words if a - 0.2 <= w.start and w.end <= b + 0.2]
+        if not loud(buf, a, b):  # a real pause
+            continue
+        # Whisper (and its VAD) drop such a stretch again or not depending on where the window starts: try a few.
+        new = []
+        for pad in REDO_PADS_S:
+            lo, hi = max(0.0, a - pad), min(len(buf) / SR, b + pad)
+            found, _ = model.transcribe(buf[int(lo * SR):int(hi * SR)], language="en", word_timestamps=True,
+                                        vad_filter=True, initial_prompt=prompt, batch_size=16)
+            got = [w for s in shifted(list(found), lo) for w in s.words if a - 0.2 <= w.start and w.end <= b + 0.2]
+            if len(got) > len(new):
+                new = got
+            if len(new) >= REDO_ENOUGH_WPS * (b - a):
+                break
         old = [w for s in out for w in s.words or [] if a - 0.2 <= w.start and w.end <= b + 0.2]
         if len(new) < max(3, 1.5 * len(old) + 3):
             continue

@@ -137,7 +137,20 @@ class FakeModel:
         return [transcribe.seg(0.0, n, words(0.0, n, label="new"))], None
 
 
+def tone(seconds, amp=0.1):
+    """A loud buffer (sounds like speech to transcribe.loud)."""
+    import numpy as np
+    t = np.arange(int(seconds * transcribe.SR)) / transcribe.SR
+    return (amp * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
+
+
 class RedoTest(unittest.TestCase):
+    def test_loud(self):
+        import numpy as np
+        self.assertTrue(transcribe.loud(tone(10), 2, 8))
+        self.assertFalse(transcribe.loud(tone(10, amp=0.001), 2, 8))  # -60 dB: a pause
+        self.assertFalse(transcribe.loud(np.zeros(16000, dtype=np.float32), 0, 1))
+
     def test_finds_long_pauses_and_sparse_segments(self):
         segs = [transcribe.seg(0, 10, words(0, 10)), transcribe.seg(15, 25, words(15, 25)),
                 transcribe.seg(25, 45, words(25, 27)),            # 20 s with 5 words: sparse
@@ -150,8 +163,8 @@ class RedoTest(unittest.TestCase):
         import numpy as np
         segs = [transcribe.seg(0, 10, words(0, 10)), transcribe.seg(20, 30, words(20, 30))]
         m = FakeModel()
-        out = transcribe.redo(m, np.zeros(40 * transcribe.SR, dtype=np.float32), segs, None, 0, 30)
-        self.assertEqual(len(m.calls), 1)
+        out = transcribe.redo(m, tone(40), segs, None, 0, 30)
+        self.assertEqual(len(m.calls), 1)  # enough words on the first try
         self.assertAlmostEqual(m.calls[0], 10.08 + 10, places=1)  # the pause and 5 s each side
         texts = [(round(w.start, 1), w.word.strip()) for s in out for w in s.words]
         self.assertTrue(all(lbl == "w" for t, lbl in texts if t < 9.9 or t > 20.1))
@@ -166,8 +179,14 @@ class RedoTest(unittest.TestCase):
             def transcribe(self, buf, **kw):
                 return [], None
         segs = [transcribe.seg(0, 10, words(0, 10)), transcribe.seg(20, 30, words(20, 30))]
-        self.assertIs(transcribe.redo(Silent(), np.zeros(40 * transcribe.SR, dtype=np.float32), segs, None, 0, 30)[0],
-                      segs[0])
+        silent = Silent()
+        silent.transcribe = lambda buf, **kw: (silent.calls.append(1) or ([], None))
+        silent.calls = []
+        self.assertIs(transcribe.redo(silent, tone(40), segs, None, 0, 30)[0], segs[0])
+        self.assertEqual(len(silent.calls), 3)  # tried every window
+        silent.calls.clear()
+        transcribe.redo(silent, np.zeros(40 * transcribe.SR, dtype=np.float32), segs, None, 0, 30)
+        self.assertEqual(silent.calls, [])  # a quiet pause isn't redone
 
     def test_words_from_trims_the_overlap(self):
         segs = [transcribe.seg(0, 10, words(0, 10)), transcribe.seg(10, 20, words(10, 20))]
