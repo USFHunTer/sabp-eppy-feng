@@ -1,5 +1,20 @@
 # Release notes
 
+## Unreleased
+
+- **Skipped passages in red:** with a book paired and the audiobook transcribed, text the narrator never
+  reads (30+ words, with transcribed audio on both sides) gets a light red tint and a "Not in the audiobook"
+  label. The text keeps its normal colour so you can read it. The highlight jumps over it instead of
+  sweeping through, and tapping it plays from where the narration continues. Text not transcribed yet is
+  never marked.
+- **Transcribe the whole book** (Read along ⋮ menu): keeps going until 100%, at full speed (two threads
+  while you're listening), even in the background: a notification shows progress and has a Stop button.
+  It still pauses below 20% battery or when the phone is warm, waits while another book is loaded, and
+  switches itself off when the book is done. Adds a foreground service (special use, so no daily time
+  cap), the wake-lock permission and, on Android 13+, asks for notifications.
+- **More accurate speech model:** Whisper small.en (190 MB, about 3× slower) next to Standard and Small.
+  Read along ⋮ → **Speech model** switches between downloaded models or downloads another.
+
 ## v0.10.1: crash fix and read-along polish (from the first device test)
 
 - **Fixed a crash when the classic player hands over to eppy** (notification tap, launcher, task restore):

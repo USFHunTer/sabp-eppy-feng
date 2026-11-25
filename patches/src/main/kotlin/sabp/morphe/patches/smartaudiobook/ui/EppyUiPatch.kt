@@ -612,6 +612,32 @@ val eppyUiPatch = resourcePatch(
             }
             application.appendChild(eppy)
 
+            // "Transcribe the whole book" keeps going in the background: a foreground service with
+            // a notification, and a wake lock while it transcribes. Special use: no daily time cap.
+            application.appendChild(doc.createElement("service").apply {
+                setAttribute("android:name", "app.morphe.extension.sabp.read.TranscribeService")
+                setAttribute("android:exported", "false")
+                setAttribute("android:foregroundServiceType", "specialUse")
+                appendChild(doc.createElement("property").apply {
+                    setAttribute("android:name", "android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE")
+                    setAttribute("android:value", "On-device transcription of the user's audiobook for read-along")
+                })
+            })
+            val declared = doc.getElementsByTagName("uses-permission").let { perms ->
+                (0 until perms.length).map { (perms.item(it) as Element).getAttribute("android:name") }.toSet()
+            }
+            listOf(
+                "android.permission.FOREGROUND_SERVICE",
+                "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+                "android.permission.WAKE_LOCK",
+                "android.permission.POST_NOTIFICATIONS",
+            ).filter { it !in declared }.forEach { perm ->
+                doc.documentElement.insertBefore(
+                    doc.createElement("uses-permission").apply { setAttribute("android:name", perm) },
+                    application,
+                )
+            }
+
             if (speechMatching == true) {
                 val perms = doc.getElementsByTagName("uses-permission")
                 val has = (0 until perms.length).any {

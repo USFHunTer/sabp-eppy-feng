@@ -73,6 +73,8 @@ Pair an EPUB or PDF with an audiobook (player sheet → **Read along** → *Choo
   - *Exact* (book timings): sentence highlight.
   - *Confirmed by listening* or *Manually corrected* (near a match): sentence highlight.
   - *Approximate* or *Estimated*: paragraph highlight only.
+  - *Not in the audiobook*: text the narrator skips (found from the transcript) has a light red tint and a label.
+    The highlight jumps over it.
 - **Tap** a paragraph to play from there.
 - **Long-press** a paragraph and choose "I'm hearing this now" to correct the position. Corrections are kept and outrank automatic matches.
 - **Exact sync:** EPUBs with EPUB 3 Media Overlays (e.g. [Storyteller](https://gitlab.com/storyteller-platform/storyteller) "readaloud" books) use their own timings.
@@ -95,6 +97,9 @@ Each comes with Retry / Choose another file / Remove pairing.
   (verified in AOSP source; see [docs/TESTING.md](docs/TESTING.md)). eppy feeds it decoded audiobook audio and never
   opens the microphone, but Android may still show its microphone indicator while recognition runs.
 - **Read along never uploads** documents or audio.
+- **Transcribe the whole book** runs as a foreground service with a notification (progress, Stop) and keeps the
+  phone awake only while it's transcribing. That's why the app declares the foreground-service, wake-lock and
+  notification permissions. It's only running while you've turned it on for a book.
 - **Book information lookups are off by default.** When on, only the title and author of the book you look up go to the
   providers you enabled.
 

@@ -468,6 +468,11 @@ public final class ReadAlong {
         return w - sk[0] < sk[1] - w ? Math.max(0, sk[0] - 1) : Math.min(unitCount() - 1, sk[1] + 1);
     }
 
+    /** Skipped passages, {first, last word}, in order. Replaced (not changed) when they change. */
+    public List<int[]> skipped() {
+        return skipped;
+    }
+
     /** The skipped passage {first, last word} containing a word, or null. */
     public int[] skippedAt(int word) {
         for (int[] sk : skipped) {

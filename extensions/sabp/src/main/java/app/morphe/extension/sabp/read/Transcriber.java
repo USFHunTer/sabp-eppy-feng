@@ -42,6 +42,9 @@ import app.morphe.extension.sabp.EppyDiag;
  *     cores, in short bursts).</li>
  *     <li>While charging it works through the whole book.</li>
  *     <li>It stops when the battery is low or the phone is warm.</li>
+ *     <li>"Transcribe the whole book" works through one book to the end at full speed (a little
+ *     gentler while it's playing), kept alive by {@link TranscribeService}. It waits while another
+ *     book is loaded and switches itself off when the book is done.</li>
  * </ul>
  * Progress is saved after every 30-second window, so it carries on where it stopped. Transcripts
  * live in the app's private storage (the source for read-along); a copy is written as
@@ -129,6 +132,7 @@ public final class Transcriber {
         }
         else s.remove(folderUri);
         prefs.edit().putStringSet("books", s).apply();
+        if (!on && wholeBook(folderUri)) setWholeBook(folderUri, null, false);
         if (on) {
             ensureRunning();
             kick();
@@ -149,6 +153,34 @@ public final class Transcriber {
 
     public long boostRemainingMs() {
         return Math.max(0, prefs.getLong("boostUntil", 0) - System.currentTimeMillis());
+    }
+
+    /** True while "Transcribe the whole book" is on for this book. */
+    public boolean wholeBook(String folderUri) {
+        return folderUri != null && prefs.getStringSet("whole", new HashSet<>()).contains(folderUri);
+    }
+
+    /** Books in "Transcribe the whole book", for the background notification. */
+    public Set<String> wholeBooks() {
+        return new HashSet<>(prefs.getStringSet("whole", new HashSet<>()));
+    }
+
+    String bookName(String folderUri) {
+        return prefs.getString("name:" + folderUri, null);
+    }
+
+    /** "Transcribe the whole book": to the end, in the background. Off again when the book is done. */
+    public void setWholeBook(String folderUri, String name, boolean on) {
+        Set<String> s = wholeBooks();
+        if (on) s.add(folderUri);
+        else s.remove(folderUri);
+        SharedPreferences.Editor e = prefs.edit().putStringSet("whole", s);
+        if (on && name != null) e.putString("name:" + folderUri, name);
+        e.apply();
+        if (on) setEnabled(folderUri, true);
+        TranscribeService.sync(app);
+        kick();
+        notifyChanged();
     }
 
     public ModelStore.Model model() {
@@ -290,6 +322,7 @@ public final class Transcriber {
 
     /** Starts the background worker if any book has a transcript switched on. */
     public synchronized void ensureRunning() {
+        TranscribeService.sync(app);
         if (worker != null && worker.isAlive()) return;
         if (prefs.getStringSet("books", new HashSet<>()).isEmpty() || stoppedAfterCrash()) return;
         stop = false;
@@ -358,7 +391,7 @@ public final class Transcriber {
     private long step(long lastPos) throws Exception {
         EppyBook b = EppyBook.current();
         if (b == null || !enabled(b.folderUri)) {
-            set(State.WAITING, "Waiting for a book with read-along");
+            set(State.WAITING, wholeBooks().isEmpty() ? "Waiting for a book with read-along" : "Waiting for its book to be loaded");
             return 20_000;
         }
         ModelStore.Model m = model();
@@ -367,6 +400,7 @@ public final class Transcriber {
             return 60_000;
         }
         boolean charging = charging() || boosted();
+        boolean whole = wholeBook(b.folderUri);
         if (!charging && batteryLevel() < 20) {
             set(State.PAUSED_BATTERY, "Paused: battery below 20%");
             return 120_000;
@@ -377,18 +411,22 @@ public final class Transcriber {
         }
 
         long pos = Math.max(0, currentPosMs());
-        Target t = pick(b, pos, charging);
+        Target t = pick(b, pos, charging || whole);
         if (t == null) {
             boolean all = progressDone(b);
+            if (all && whole) setWholeBook(b.folderUri, null, false);
             set(all ? State.DONE : State.AHEAD, all ? "The whole book is transcribed" : "Ahead of you; more while charging");
             return 30_000;
         }
         set(State.WORKING, t.file);
         long began = SystemClock.elapsedRealtime();
-        boolean ok = window(b, t, m, charging ? Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors() / 2)) : 2);
+        // Whole book while it's playing: no rests, but only two threads so playback stays smooth and cool.
+        boolean playing = lastPos >= 0 && pos != lastPos;
+        boolean full = charging || whole && !playing;
+        boolean ok = window(b, t, m, full ? Math.max(2, Math.min(4, Runtime.getRuntime().availableProcessors() / 2)) : 2);
         long took = SystemClock.elapsedRealtime() - began;
         if (!ok) return 30_000;
-        return charging ? 200 : Math.max(500, took); // ~50% duty cycle on battery
+        return charging || whole ? 200 : Math.max(500, took); // ~50% duty cycle on battery
     }
 
     private boolean progressDone(EppyBook b) {

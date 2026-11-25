@@ -190,6 +190,10 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
             pdf = null;
             if (text != null && text.pagesOnly && ra.docUri() != null) pdf = new PdfPages(c, Uri.parse(ra.docUri()));
             unit = -1;
+            shownSkips = ra.skipped();
+            adapter.notifyDataSetChanged();
+        } else if (shownSkips != ra.skipped()) {
+            shownSkips = ra.skipped();
             adapter.notifyDataSetChanged();
         }
         ReadAlong.State s = ra.state();
@@ -396,7 +400,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
                 return "The speech model isn't downloaded";
             case WORKING:
                 String sp = tr.speedLabel();
-                return "Transcribing" + (pct.isEmpty() ? "" : " · " + pct) + (sp != null ? " · " + sp : "");
+                return (tr.wholeBook(bk.folderUri) ? "Transcribing the whole book" : "Transcribing") + (pct.isEmpty() ? "" : " · " + pct) + (sp != null ? " · " + sp : "");
             case AHEAD:
                 return "Ahead of you" + (pct.isEmpty() ? "" : " · " + pct) + " · the rest while charging";
             case DONE:
@@ -432,9 +436,20 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
 
     /** "Start read-along": switches transcription on for this book, asking to download the model first. */
     private void startTranscript(boolean withDocument) {
+        startTranscript(withDocument, false);
+    }
+
+    private void startTranscript(boolean withDocument, boolean whole) {
         EppyBook bk = host.player().book();
         if (bk == null) return;
         Runnable go = () -> {
+            if (whole) {
+                // Without it the background notification (progress, Stop) is hidden on Android 13+.
+                if (android.os.Build.VERSION.SDK_INT >= 33 && c.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    host.activity().requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 0x7EA1);
+                }
+                tr.setWholeBook(bk.folderUri, bk.folderName, true);
+            }
             tr.setEnabled(bk.folderUri, true);
             if (withDocument) host.pickDocument();
             rebuild();
@@ -444,17 +459,21 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
     }
 
     private void askDownload(Runnable then) {
-        Sheet sh = new Sheet(host.overlayRoot(), t, "Download the speech model?");
+        boolean have = tr.modelReady();
+        Sheet sh = new Sheet(host.overlayRoot(), t, have ? "Speech model" : "Download the speech model?");
         TextView body = Ui.text(c, t, "To transcribe on your phone, eppy needs a speech model (Whisper, by OpenAI, run with whisper.cpp). "
                 + "It's downloaded once from whisper.cpp's model page on Hugging Face and stays on this phone; your audio never leaves it."
                 + (ModelStore.metered(c) ? "\n\nYou're on a metered connection (mobile data)." : ""), 14, 400, t.onSurfaceVariant);
         body.setPadding(Ui.dp(c, 24), 0, Ui.dp(c, 24), Ui.dp(c, 8));
         sh.content().addView(body);
         for (ModelStore.Model m : ModelStore.MODELS) {
-            sh.item(EppyIcon.DOWNLOAD, m.label + " · " + m.sizeLabel(), m == ModelStore.BASE ? "Recommended" : null, () -> {
+            boolean installed = ModelStore.installed(c, m);
+            String note = m == tr.model() && have ? "In use" : installed ? "Downloaded" : m == ModelStore.BASE ? "Recommended" : null;
+            sh.item(EppyIcon.DOWNLOAD, m.label + " · " + m.sizeLabel(), note, () -> {
                 tr.setModel(m);
                 if (then != null) then.run();
-                tr.downloadModel(null);
+                if (installed) tr.kick();
+                else tr.downloadModel(null);
                 rebuild();
             });
         }
@@ -587,6 +606,39 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
         return pos >= 0 && ra.levelAt(pos) >= 2;
     }
 
+    private java.util.List<int[]> shownSkips;
+
+    private int skipRed() {
+        return t.dark ? 0xFFF28B82 : 0xFFC5221F;
+    }
+
+    /**
+     * Skipped passages in this paragraph: a light red tint behind the words, in the normal text
+     * colour so they stay easy to read, and a small label where a passage starts.
+     */
+    private CharSequence markSkipped(BookText.Para para, CharSequence body) {
+        if (text.pagesOnly || para.wordCount == 0) return body;
+        java.util.List<int[]> sks = ra.skippedIn(para.firstWord, para.firstWord + para.wordCount - 1);
+        if (sks.isEmpty()) return body;
+        android.text.SpannableStringBuilder s = new android.text.SpannableStringBuilder();
+        if (sks.get(0)[0] >= para.firstWord) {
+            s.append("Not in the audiobook\n");
+            s.setSpan(new ForegroundColorSpan(skipRed()), 0, s.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new android.text.style.RelativeSizeSpan(0.75f), 0, s.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new android.text.style.StyleSpan(Typeface.BOLD), 0, s.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        int off = s.length();
+        s.append(body);
+        int last = para.firstWord + para.wordCount - 1;
+        for (int[] sk : sks) {
+            int from = off + text.wordStart[Math.max(sk[0], para.firstWord)];
+            int to = off + extendToPunctuation(para.text, text.wordEnd[Math.min(sk[1], last)]);
+            s.setSpan(new ForegroundColorSpan(t.onSurface), from, to, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new BackgroundColorSpan(EppyTheme.withAlpha(skipRed(), t.dark ? 0.12f : 0.08f)), from, to, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        return s;
+    }
+
     private void bindText(TextView tv, int pos) {
         BookText.Para para = text.paras.get(pos);
         boolean current = unit >= 0 && paraOf(unit) == pos;
@@ -598,7 +650,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
         if (current && !precise()) {
             // Estimate only: highlight the paragraph, not a sentence we can't vouch for.
             tv.setBackground(Ui.rounded(EppyTheme.withAlpha(t.primary, 0.10f), Ui.dp(c, 12)));
-            tv.setText(para.text);
+            tv.setText(markSkipped(para, para.text));
         } else if (current && para.wordCount > 0) {
             tv.setBackground(null);
             SpannableString s = new SpannableString(para.text);
@@ -612,10 +664,10 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
                 if (from > 0) s.setSpan(new ForegroundColorSpan(EppyTheme.withAlpha(t.onSurface, 0.55f)), 0, from, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 if (to < para.text.length()) s.setSpan(new ForegroundColorSpan(EppyTheme.withAlpha(t.onSurface, 0.75f)), to, para.text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
-            tv.setText(s);
+            tv.setText(markSkipped(para, s));
         } else {
             tv.setBackground(null);
-            tv.setText(para.text);
+            tv.setText(markSkipped(para, para.text));
         }
     }
 
@@ -627,10 +679,13 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
     private void jumpToPara(int pos) {
         if (text == null) return;
         int u = text.pagesOnly ? pos : text.paras.get(pos).firstWord;
+        int[] sk = text.pagesOnly ? null : ra.skippedAt(u);
+        if (sk != null) u = Math.min(text.wordCount() - 1, sk[1] + 1);
         double sec = ra.timeOfUnit(u);
         if (host.player().jumpToBook(sec)) {
             userScrolledAt = 0;
-            if (!precise()) Toast.makeText(c, "Jumped to the estimated spot. Long-press a paragraph to correct it.", Toast.LENGTH_SHORT).show();
+            if (sk != null) Toast.makeText(c, "This part isn't in the audiobook. Playing from where the narration continues.", Toast.LENGTH_LONG).show();
+            else if (!precise()) Toast.makeText(c, "Jumped to the estimated spot. Long-press a paragraph to correct it.", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(c, "Couldn't jump: the book's length isn't known yet", Toast.LENGTH_SHORT).show();
         }
@@ -671,6 +726,15 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
                             rebuild();
                         });
             }
+            if (tr.wholeBook(bk.folderUri)) {
+                sh.item(EppyIcon.SUBTITLES, "Stop transcribing the whole book", "Goes back to staying a little ahead of you", () -> {
+                    tr.setWholeBook(bk.folderUri, null, false);
+                    rebuild();
+                });
+            } else if (tr.state() != Transcriber.State.DONE) {
+                sh.item(EppyIcon.SUBTITLES, "Transcribe the whole book", "Keeps going until it's 100% done, even in the background", () -> startTranscript(false, true));
+            }
+            sh.item(EppyIcon.DOWNLOAD, "Speech model", tr.model().label, () -> askDownload(null));
             sh.item(EppyIcon.CLOSE, "Stop transcribing this book", "What's done is kept; turn it on again any time", () -> {
                 tr.setEnabled(bk.folderUri, false);
                 rebuild();
@@ -682,6 +746,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
             });
         } else if (bk != null) {
             sh.item(EppyIcon.SUBTITLES, "Transcribe this book", "On the phone, in the background, a little ahead of you", () -> startTranscript(false));
+            sh.item(EppyIcon.SUBTITLES, "Transcribe the whole book", "Keeps going until it's 100% done, even in the background", () -> startTranscript(false, true));
         }
         if (!ra.hasDocument()) {
             sh.show();
