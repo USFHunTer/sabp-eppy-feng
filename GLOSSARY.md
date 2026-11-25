@@ -16,5 +16,5 @@ _Avoid_: missing text, missing part.
 
 **Speed up**: transcribing at charging speed for 30 minutes.
 
-**Transcribe whole book**: keep transcribing one book until its transcription progress reaches 100%, regardless of where the listener is, instead of staying a few minutes ahead.
+**Transcribe whole book**: keep transcribing one book until its transcription progress reaches 100%, regardless of where the listener is, instead of staying a few minutes ahead. It belongs to one book, keeps going in the background, and waits while another book is loaded.
 _Avoid_: force read, read all the file.
