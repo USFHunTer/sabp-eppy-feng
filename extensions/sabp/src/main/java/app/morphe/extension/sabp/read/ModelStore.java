@@ -37,7 +37,8 @@ public final class ModelStore {
 
     public static final Model BASE = new Model("base.en-q5_1", "Standard (English)", 59_700_000L);
     public static final Model TINY = new Model("tiny.en-q5_1", "Small and faster (English, less accurate)", 32_200_000L);
-    public static final Model[] MODELS = {BASE, TINY};
+    public static final Model SMALL = new Model("small.en-q5_1", "More accurate (English, about 3× slower)", 190_100_000L);
+    public static final Model[] MODELS = {BASE, SMALL, TINY};
 
     public interface Progress {
         /** Called on the download thread; return false to cancel. */
