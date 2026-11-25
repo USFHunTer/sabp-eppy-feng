@@ -41,6 +41,12 @@ def hms(seconds):
     return f"{s // 3600}:{s // 60 % 60:02d}:{s % 60:02d}"
 
 
+def span(p):
+    """Where the passage would be: between the matched words before it and after it (plus a little)."""
+    a, b = hms(p["at"]), hms(p["until"] + 5)
+    return a if a == b else f"{a} – {b}"
+
+
 def ends(text, n=8):
     """First and last few words only."""
     w = text.split()
@@ -82,7 +88,8 @@ h1{font-size:1.4rem;margin:.2em 0}.muted{color:var(--muted)}
 <p class="muted">__BOOK__ · __SUMMARY__</p>
 <p>eppy would mark these passages "Not in the audiobook" (matching run on the PC transcript). Each stretch of audio was
 transcribed again on its own: <b class="v-false">false mark</b> means most of the passage's words are in the audio after
-all; <b class="v-skip">probably skipped</b> means half or fewer are. Times are in the audiobook file; jump there in SABP to listen.</p>
+all; <b class="v-skip">probably skipped</b> means half or fewer are. Times are in the audiobook file, from the last matched words before the passage to the first after it; a passage
+that is narrated starts a little after the first time.</p>
 <div class="tabs" role="group">__TABS__</div>
 <div id="list">__CARDS__</div>
 <script>
@@ -100,7 +107,7 @@ def report(audit, passages, sparse_count):
     cards = []
     for p in passages:
         cards.append(
-            f'<div class="card" data-v="{p["verdict"]}"><div class="top"><span class="time">{hms(p["at"])}</span>'
+            f'<div class="card" data-v="{p["verdict"]}"><div class="top"><span class="time">{span(p)}</span>'
             f'<span class="v {cls[p["verdict"]]}">{p["verdict"]}</span></div>'
             f'<div class="muted">{p["words"]} words · {100 * p["freshFound"]:.0f}% found on the second run'
             f'{" · next to a sparse transcript segment" if p["sparseNearby"] else ""}</div>'

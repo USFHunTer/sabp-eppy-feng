@@ -20,6 +20,10 @@ AUDIO = (".m4b", ".m4a", ".mp3", ".ogg", ".opus", ".flac")
 SR = 16000
 CHUNK_S = 30 * 60  # audio is decoded and transcribed in pieces of about this length, so a 57 h book fits in RAM
 TAIL_S = 60  # segments ending in the last minute of a piece are redone with the next piece (no cut words)
+OVERLAP_S = 30  # the next piece starts this much before the cut; only words after the cut are kept from it
+GAP_S = 4.0  # a pause this long between words in narration is usually speech Whisper left out
+SPARSE_WPS, SPARSE_MIN_S = 1.2, 8.0  # a segment this long with fewer words per second probably lost some
+REDO_PAD_S, REDO_MAX_S = 5.0, 30.0  # context around a stretch done again; longer pauses are real breaks
 
 
 def add_cuda_dlls():
@@ -221,6 +225,75 @@ def transcript_path(audio):
     return audio.with_name(audio.stem + ".transcript.json")
 
 
+def seg(start, end, words, no_speech_prob=0.0):
+    """A segment like faster-whisper's, made from words (whose text keeps its leading space)."""
+    from types import SimpleNamespace
+    return SimpleNamespace(start=start, end=end, text="".join(w.word for w in words).strip(), words=words,
+                           no_speech_prob=no_speech_prob)
+
+
+def shifted(segs, by):
+    """Segments with all times moved by `by` seconds."""
+    from types import SimpleNamespace
+    return [seg(s.start + by, s.end + by, [SimpleNamespace(start=w.start + by, end=w.end + by, word=w.word)
+                                         for w in s.words or []], s.no_speech_prob) for s in segs]
+
+
+def words_from(segs, t):
+    """Only the words starting at or after t (seconds); segments left without words are dropped."""
+    out = []
+    for s in segs:
+        if s.start >= t:
+            out.append(s)
+            continue
+        kept = [w for w in s.words or [] if w.start >= t]
+        if kept:
+            out.append(seg(kept[0].start, s.end, kept, s.no_speech_prob))
+    return out
+
+
+def stretches(segs, t0, t1):
+    """Stretches of [t0, t1) (seconds) where Whisper probably left speech out: long pauses between words, and
+    long segments with too few words. The VAD can miss speech too, so pauses count even where it saw none."""
+    out = []
+    words = [w for s in segs for w in s.words or []]
+    prev = t0
+    for w in words + [None]:
+        start = w.start if w else t1
+        if GAP_S <= start - prev <= REDO_MAX_S:
+            out.append((prev, start))
+        if w:
+            prev = max(prev, w.end)
+    for s in segs:
+        d = s.end - s.start
+        if d >= SPARSE_MIN_S and len(s.words or []) / d < SPARSE_WPS:
+            out.append((s.start, s.end))
+    return sorted(out)
+
+
+def redo(model, buf, segs, prompt, t0, t1):
+    """Transcribes the suspicious stretches of [t0, t1) again on their own and puts in what was missing."""
+    out = list(segs)
+    for a, b in stretches(segs, t0, t1):
+        lo, hi = max(0.0, a - REDO_PAD_S), min(len(buf) / SR, b + REDO_PAD_S)
+        found, _ = model.transcribe(buf[int(lo * SR):int(hi * SR)], language="en", word_timestamps=True,
+                                    vad_filter=True, initial_prompt=prompt, batch_size=16)
+        new = [w for s in shifted(list(found), lo) for w in s.words if a - 0.2 <= w.start and w.end <= b + 0.2]
+        old = [w for s in out for w in s.words or [] if a - 0.2 <= w.start and w.end <= b + 0.2]
+        if len(new) < max(3, 1.5 * len(old) + 3):
+            continue
+        # Replace what was there in the stretch with the new words.
+        kept = []
+        for s in out:
+            rest = [w for w in s.words or [] if not (a - 0.2 <= w.start and w.end <= b + 0.2)]
+            if len(rest) == len(s.words or []):
+                kept.append(s)
+            elif rest:
+                kept.append(seg(rest[0].start, rest[-1].end, rest, s.no_speech_prob))
+        out = sorted(kept + [seg(new[0].start, new[-1].end, new)], key=lambda s: s.start)
+    return out
+
+
 def transcribe_file(model, audio, prompt=None, progress=None):
     """Transcribes one audio file and writes its transcript file. Returns the transcript dict."""
     import numpy as np
@@ -229,6 +302,7 @@ def transcribe_file(model, audio, prompt=None, progress=None):
     segs = []
     carry = np.zeros(0, dtype=np.float32)
     offset = 0  # samples before carry[0]
+    fresh = 0  # samples at the start of carry already transcribed by the previous piece (the overlap)
     timeline = Timeline()
     pieces = pcm_pieces(audio, timeline)
     piece = next(pieces, None)
@@ -238,7 +312,7 @@ def transcribe_file(model, audio, prompt=None, progress=None):
         last = nxt is None
         found, _ = model.transcribe(buf, language="en", word_timestamps=True, vad_filter=True,
                                     initial_prompt=prompt, batch_size=16)
-        found = list(found)
+        found = words_from(list(found), fresh / SR)
         cut = len(buf)
         if not last:
             # Keep segments that end before the tail; the tail starts again in the next piece.
@@ -246,11 +320,16 @@ def transcribe_file(model, audio, prompt=None, progress=None):
             keep = [s for s in found if s.end <= limit]
             cut = int(keep[-1].end * SR) if keep else int(limit * SR)
             found = keep
+        found = redo(model, buf, found, prompt, fresh / SR, cut / SR)
         segs += flt.convert(found, ms(offset / SR))
         if progress and segs:
             progress(segs[-1][1])
-        carry = buf[cut:]
-        offset += cut
+        # The next piece starts a little before the cut, so its first words have context (Whisper can drop the
+        # start of a piece); words before the cut are dropped from it.
+        start = max(0, cut - OVERLAP_S * SR)
+        carry = buf[start:]
+        fresh = cut - start
+        offset += start
         piece = nxt
     dur = timeline(1000 * (offset + len(carry)) / SR)
     t = {"v": 1, "name": audio.name, "dur": dur, "covered": [[0, dur]], "segs": timeline.segs(segs)}

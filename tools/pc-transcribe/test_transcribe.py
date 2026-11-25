@@ -116,6 +116,69 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(len(a.sparse_segments(t)), 1)
 
 
+def words(t0, t1, step=0.4, label="w"):
+    """Fake words every `step` seconds in [t0, t1)."""
+    out, t = [], t0
+    while t < t1 - 1e-9:
+        out.append(NS(start=t, end=t + step * 0.8, word=" " + label))
+        t += step
+    return out
+
+
+class FakeModel:
+    """Hears speech everywhere in the buffer it's given: one segment, a word every 0.4 s, labelled "new"."""
+
+    def __init__(self):
+        self.calls = []
+
+    def transcribe(self, buf, **kw):
+        n = len(buf) / transcribe.SR
+        self.calls.append(n)
+        return [transcribe.seg(0.0, n, words(0.0, n, label="new"))], None
+
+
+class RedoTest(unittest.TestCase):
+    def test_finds_long_pauses_and_sparse_segments(self):
+        segs = [transcribe.seg(0, 10, words(0, 10)), transcribe.seg(15, 25, words(15, 25)),
+                transcribe.seg(25, 45, words(25, 27)),            # 20 s with 5 words: sparse
+                transcribe.seg(80, 90, words(80, 90))]            # 35 s pause before it: a real break
+        st = transcribe.stretches(segs, 0, 100)
+        # The 5 s pause, the sparse segment, and the 10 s pause at the end; not the 53 s break before 80 s.
+        self.assertEqual([(round(a, 2), round(b, 2)) for a, b in st], [(9.92, 15.0), (25.0, 45.0), (89.92, 100.0)])
+
+    def test_redo_fills_the_pause_only(self):
+        import numpy as np
+        segs = [transcribe.seg(0, 10, words(0, 10)), transcribe.seg(20, 30, words(20, 30))]
+        m = FakeModel()
+        out = transcribe.redo(m, np.zeros(40 * transcribe.SR, dtype=np.float32), segs, None, 0, 30)
+        self.assertEqual(len(m.calls), 1)
+        self.assertAlmostEqual(m.calls[0], 10.08 + 10, places=1)  # the pause and 5 s each side
+        texts = [(round(w.start, 1), w.word.strip()) for s in out for w in s.words]
+        self.assertTrue(all(lbl == "w" for t, lbl in texts if t < 9.9 or t > 20.1))
+        new = [t for t, lbl in texts if lbl == "new"]
+        self.assertTrue(new and min(new) >= 9.7 and max(new) <= 20.0)
+        self.assertEqual([t for t, _ in texts], sorted(t for t, _ in texts))
+
+    def test_redo_keeps_what_was_there_when_nothing_more_is_heard(self):
+        import numpy as np
+
+        class Silent:
+            def transcribe(self, buf, **kw):
+                return [], None
+        segs = [transcribe.seg(0, 10, words(0, 10)), transcribe.seg(20, 30, words(20, 30))]
+        self.assertIs(transcribe.redo(Silent(), np.zeros(40 * transcribe.SR, dtype=np.float32), segs, None, 0, 30)[0],
+                      segs[0])
+
+    def test_words_from_trims_the_overlap(self):
+        segs = [transcribe.seg(0, 10, words(0, 10)), transcribe.seg(10, 20, words(10, 20))]
+        out = transcribe.words_from(segs, 5)
+        self.assertEqual(len(out), 2)
+        self.assertGreaterEqual(out[0].words[0].start, 5)
+        self.assertEqual(out[0].text, " ".join(["w"] * len(out[0].words)))
+        self.assertIs(out[1], segs[1])
+        self.assertEqual(transcribe.words_from(segs, 30), [])
+
+
 class LibraryTest(unittest.TestCase):
     def test_skip_rule_and_walk(self):
         import os
