@@ -73,7 +73,10 @@ checklist (spec section 18), which still hasn't been run by the developer.
 Read-along logic tests in `ui-tests/src/test/kotlin/.../read/` (JVM, no rendering):
 
 - **WholeBookTest:** the remembered whole-book book and the progress label.
-- **SkippedPassageTest:** `TranscriptSync.skipped` around a jump, including a hyphenated word heard as one word.
+- **SkippedPassageTest:** `TranscriptSync.skipped` around a jump, including a hyphenated word heard as one word and a
+  passage narrated in another order (not marked).
+- **SkipAuditTest:** not a regular test (runs only with `EPPY_AUDIT_DIR`): eppy's matching on a real book folder's PC
+  transcript and EPUB, for `tools/pc-transcribe/audit_skips.py` to check every passage it would mark.
 - **PcImportTest** (v0.12.0): importing a transcript file made on the PC gives 100%; a wrong name, a length more than
   2 s off, format version 2, an incomplete file and broken JSON aren't imported; a partial phone transcript is
   replaced; only a newer file is imported again.

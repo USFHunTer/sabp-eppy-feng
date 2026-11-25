@@ -13,6 +13,9 @@
   is imported again; the same one isn't.
 - **The phone's transcriber can't overwrite an import:** a piece it was transcribing when the import happened is
   dropped.
+- **Fewer false "Not in the audiobook" marks:** a passage whose words were mostly heard in that gap, just in another
+  order or slightly edited by the narrator, is no longer marked. The PC tool also redoes stretches of narration Whisper
+  left out, which on the phone showed up as passages marked skipped although the narrator reads them.
 - **Skipped passages are tighter:** a hyphenated word the recogniser writes as one word ("door-nail" as "doornail") no
   longer stops the narrated words next to a skip from being recognised, which could mark a few narrated words red.
 
