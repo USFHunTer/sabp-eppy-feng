@@ -140,28 +140,7 @@ public final class FileTranscript {
             byte[] data = new byte[(int) f.length()];
             int off = 0, r;
             while (off < data.length && (r = in.read(data, off, data.length - off)) > 0) off += r;
-            JSONObject o = new JSONObject(new String(data, 0, off, StandardCharsets.UTF_8));
-            FileTranscript t = new FileTranscript(o.getString("name"));
-            t.durationMs = o.optLong("dur", -1);
-            JSONArray cov = o.optJSONArray("covered");
-            if (cov != null) for (int i = 0; i < cov.length(); i++) {
-                JSONArray r2 = cov.getJSONArray(i);
-                t.covered.add(new long[]{r2.getLong(0), r2.getLong(1)});
-            }
-            JSONArray ss = o.optJSONArray("segs");
-            if (ss != null) for (int i = 0; i < ss.length(); i++) {
-                JSONArray s = ss.getJSONArray(i);
-                Seg seg = new Seg();
-                seg.t0 = s.getLong(0);
-                seg.t1 = s.getLong(1);
-                seg.text = s.getString(2);
-                JSONArray ws = s.getJSONArray(3);
-                for (int k = 0; k < ws.length(); k++) {
-                    JSONArray w = ws.getJSONArray(k);
-                    seg.words.add(new Word(w.getLong(0), w.getLong(1), w.getString(2)));
-                }
-                t.segs.add(seg);
-            }
+            FileTranscript t = parse(new String(data, 0, off, StandardCharsets.UTF_8));
             synchronized (cache) {
                 cache.put(f.getPath(), new Object[]{f.lastModified(), t});
             }
@@ -169,6 +148,35 @@ public final class FileTranscript {
         } catch (Throwable e) {
             return null;
         }
+    }
+
+    /** Reads what {@link #save} writes (also a transcript file made on the PC). Refuses other format versions. */
+    static FileTranscript parse(String json) throws Exception {
+        JSONObject o = new JSONObject(json);
+        int v = o.optInt("v", 1);
+        if (v != 1) throw new IllegalArgumentException("format version " + v);
+        FileTranscript t = new FileTranscript(o.getString("name"));
+        t.durationMs = o.optLong("dur", -1);
+        JSONArray cov = o.optJSONArray("covered");
+        if (cov != null) for (int i = 0; i < cov.length(); i++) {
+            JSONArray r2 = cov.getJSONArray(i);
+            t.covered.add(new long[]{r2.getLong(0), r2.getLong(1)});
+        }
+        JSONArray ss = o.optJSONArray("segs");
+        if (ss != null) for (int i = 0; i < ss.length(); i++) {
+            JSONArray s = ss.getJSONArray(i);
+            Seg seg = new Seg();
+            seg.t0 = s.getLong(0);
+            seg.t1 = s.getLong(1);
+            seg.text = s.getString(2);
+            JSONArray ws = s.getJSONArray(3);
+            for (int k = 0; k < ws.length(); k++) {
+                JSONArray w = ws.getJSONArray(k);
+                seg.words.add(new Word(w.getLong(0), w.getLong(1), w.getString(2)));
+            }
+            t.segs.add(seg);
+        }
+        return t;
     }
 
     void save(File dir) {

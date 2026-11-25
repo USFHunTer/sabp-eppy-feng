@@ -605,23 +605,20 @@ public final class Transcriber {
         long next = ft.nextCoveredStart(t.from);
         long end = Math.min(ft.durationMs, Math.min(next, t.from + WIN));
         if (end - t.from < 1500) { // a sliver between two done parts
-            ft.cover(t.from, end);
-            ft.save(dir(b.folderUri));
+            store(b, ft, () -> ft.cover(t.from, end));
             return true;
         }
         Uri uri = SpeechSync.fileUri(b.folderUri, t.file);
         float[] pcm = AudioDecoder.decode(app, uri, t.from, end - t.from);
         boolean eof = end >= ft.durationMs || end >= next;
         if (pcm.length < AudioDecoder.RATE) { // nothing decodable here
-            ft.cover(t.from, end);
-            ft.save(dir(b.folderUri));
+            store(b, ft, () -> ft.cover(t.from, end));
             return true;
         }
         String flight = b.folderUri + "|" + t.file + "|" + t.from;
         if (flight.equals(prefs.getString("skip", null))) { // crashed here last time: leave this window out
             prefs.edit().remove("skip").apply();
-            ft.cover(t.from, end);
-            ft.save(dir(b.folderUri));
+            store(b, ft, () -> ft.cover(t.from, end));
             return true;
         }
         Whisper w = whisper(m);
@@ -656,13 +653,120 @@ public final class Transcriber {
             }
             if (coverTo - t.from < 5000) coverTo = t.from + len;
         }
-        ft.add(segs, t.from, coverTo);
-        ft.save(dir(b.folderUri));
+        final long to = coverTo;
+        if (!store(b, ft, () -> ft.add(segs, t.from, to))) return true;
         ft.windows++;
         lastDoneAt = SystemClock.elapsedRealtime();
         if (ft.firstGap(0) < 0 || ft.windows % 10 == 0) writeSrt(b, ft);
         notifyChanged();
         return true;
+    }
+
+    private final Object storeLock = new Object();
+
+    /** Changes and saves the worker's transcript, unless an import replaced it meanwhile (then returns false). */
+    private boolean store(EppyBook b, FileTranscript ft, Runnable change) {
+        File d = dir(b.folderUri);
+        synchronized (storeLock) {
+            // The window took a while: saving this (older) transcript now would undo an import made since.
+            if (FileTranscript.load(d, ft.name) != ft) return false;
+            change.run();
+            ft.save(d);
+            return true;
+        }
+    }
+
+    // ---- transcript files made on the PC ------------------------------------------------------------
+
+    /**
+     * Imports "&lt;audio&gt;.transcript.json" files (made by tools/pc-transcribe) from the book folder:
+     * each one newer than the last import of that file, of this book's audio, with the right length
+     * and complete, replaces that file's transcript. Switches transcription on for the book if any
+     * was imported. Returns how many were. Reads files, so not on the main thread.
+     */
+    public int importTranscripts(EppyBook b) {
+        if (b == null || b.folderUri == null) return 0;
+        File d = dir(b.folderUri);
+        int n = 0;
+        for (Object[] f : transcriptFiles(b.folderUri)) {
+            String file = (String) f[0];
+            long modified = (Long) f[1];
+            String key = "imported:" + b.folderUri + "|" + file;
+            if (modified <= prefs.getLong(key, 0)) continue;
+            FileTranscript ft;
+            try {
+                ft = FileTranscript.parse(readText((Uri) f[2]));
+            } catch (Throwable t) {
+                EppyDiag.log("transcribe", "import " + file + ": unreadable (" + t.getMessage() + ")");
+                continue;
+            }
+            String why = importProblem(b, d, ft);
+            if (why != null) {
+                EppyDiag.log("transcribe", "import " + file + ": " + why);
+                continue;
+            }
+            synchronized (storeLock) {
+                ft.save(d);
+            }
+            prefs.edit().putLong(key, modified).apply();
+            writeSrt(b, ft);
+            EppyDiag.log("transcribe", "imported " + file + " (" + ft.segs.size() + " segments)");
+            n++;
+        }
+        if (n > 0) setEnabled(b.folderUri, true);
+        return n;
+    }
+
+    /** Why a transcript file can't be imported for this book, or null if it can. */
+    private String importProblem(EppyBook b, File d, FileTranscript ft) {
+        EppyBook.FileItem item = null;
+        for (EppyBook.FileItem f : b.files) if (f.name.equals(ft.name)) item = f;
+        if (item == null) return "\"" + ft.name + "\" isn't one of this book's files";
+        FileTranscript mine = FileTranscript.load(d, ft.name);
+        long len = mine != null && mine.durationMs > 0 ? mine.durationMs : AudioDecoder.durationMs(app, SpeechSync.fileUri(b.folderUri, ft.name));
+        if (len <= 0 && item.duration > 0) len = item.duration * 1000L;
+        if (len <= 0) return "the audio file's length is unknown";
+        if (Math.abs(ft.durationMs - len) > 2000) return "length " + ft.durationMs + " ms, but the audio is " + len + " ms";
+        if (ft.firstGap(0) >= 0) return "not complete";
+        return null;
+    }
+
+    /** {name, last modified, Uri} of the *.transcript.json files in a book folder (SAF tree or file path). */
+    private List<Object[]> transcriptFiles(String folderUri) {
+        ArrayList<Object[]> out = new ArrayList<>();
+        Uri folder = Uri.parse(folderUri);
+        try {
+            if ("file".equals(folder.getScheme()) || folderUri.startsWith("/")) {
+                File[] fs = new File(folder.getPath() != null ? folder.getPath() : folderUri).listFiles();
+                if (fs != null) for (File f : fs) {
+                    if (f.isFile() && f.getName().endsWith(".transcript.json")) out.add(new Object[]{f.getName(), f.lastModified(), Uri.fromFile(f)});
+                }
+                return out;
+            }
+            Uri children = DocumentsContract.buildChildDocumentsUriUsingTree(folder, DocumentsContract.getDocumentId(folder));
+            try (android.database.Cursor cur = app.getContentResolver().query(children, new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_LAST_MODIFIED}, null, null, null)) {
+                while (cur != null && cur.moveToNext()) {
+                    String name = cur.getString(1);
+                    if (name != null && name.endsWith(".transcript.json")) {
+                        out.add(new Object[]{name, cur.isNull(2) ? 0L : cur.getLong(2), DocumentsContract.buildDocumentUriUsingTree(folder, cur.getString(0))});
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            EppyDiag.log("transcribe", "import: can't list the book folder (" + t.getClass().getSimpleName() + ")");
+        }
+        return out;
+    }
+
+    private String readText(Uri uri) throws Exception {
+        try (java.io.InputStream in = "file".equals(uri.getScheme()) ? new java.io.FileInputStream(uri.getPath()) : app.getContentResolver().openInputStream(uri)) {
+            if (in == null) throw new java.io.IOException("can't open");
+            java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+            byte[] chunk = new byte[1 << 16];
+            for (int r; (r = in.read(chunk)) > 0; ) buf.write(chunk, 0, r);
+            return buf.toString("UTF-8");
+        }
     }
 
     /** Parses jni.c's JSON into segments with words, shifting times by offset. Drops obvious hallucinations. */

@@ -5,7 +5,7 @@ import android.content.ContextWrapper
 import android.content.SharedPreferences
 
 /** layoutlib has no real SharedPreferences; eppy reads its settings through this in-memory store. */
-class TestContext(base: Context, values: Map<String, Any?> = emptyMap()) : ContextWrapper(base) {
+class TestContext(base: Context, values: Map<String, Any?> = emptyMap(), private val files: java.io.File? = null) : ContextWrapper(base) {
     private val stores = HashMap<String, FakePrefs>()
 
     init {
@@ -18,6 +18,8 @@ class TestContext(base: Context, values: Map<String, Any?> = emptyMap()) : Conte
     override fun getSharedPreferences(name: String, mode: Int): SharedPreferences = store(name)
 
     override fun getApplicationContext(): Context = this
+
+    override fun getFilesDir(): java.io.File = files ?: super.getFilesDir()
 }
 
 class FakePrefs : SharedPreferences {
