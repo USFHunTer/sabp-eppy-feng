@@ -34,6 +34,8 @@ public final class TranscribeService extends Service implements Transcriber.List
     private Transcriber tr;
     private PowerManager.WakeLock lock;
     private volatile boolean destroyed;
+    private volatile Notification last;
+    private static volatile boolean running;
 
     /** Starts or stops the service to match whether any book is in whole-book mode. */
     static void sync(Context c) {
@@ -41,7 +43,7 @@ public final class TranscribeService extends Service implements Transcriber.List
         Intent i = new Intent(app, TranscribeService.class);
         try {
             if (Transcriber.get(app).wholeBooks().isEmpty()) app.stopService(i);
-            else app.startForegroundService(i);
+            else if (!running) app.startForegroundService(i); // starting it again would re-post the notification (flicker)
         } catch (Throwable t) { // Android refuses to start it from the background; it starts next time eppy opens
             EppyDiag.log("transcribe", "background service: " + t.getClass().getSimpleName());
         }
@@ -50,6 +52,7 @@ public final class TranscribeService extends Service implements Transcriber.List
     @Override
     public void onCreate() {
         super.onCreate();
+        running = true;
         tr = Transcriber.get(this);
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
         lock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "eppy:transcribe");
@@ -64,7 +67,7 @@ public final class TranscribeService extends Service implements Transcriber.List
             for (String f : tr.wholeBooks()) tr.setWholeBook(f, null, false);
             return START_NOT_STICKY;
         }
-        Notification n = notification("Transcribing the whole book", null, -1);
+        Notification n = last != null ? last : notification("Transcribing the whole book", null, -1);
         if (Build.VERSION.SDK_INT >= 34) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
         else startForeground(ID, n);
         if (tr.wholeBooks().isEmpty()) {
@@ -111,6 +114,7 @@ public final class TranscribeService extends Service implements Transcriber.List
                 }
             }
             Notification n = notification(title, text, pct);
+            last = n;
             if (!destroyed) getSystemService(NotificationManager.class).notify(ID, n);
         });
     }
@@ -134,6 +138,7 @@ public final class TranscribeService extends Service implements Transcriber.List
     @Override
     public void onDestroy() {
         destroyed = true;
+        running = false;
         tr.removeListener(this);
         if (lock.isHeld()) lock.release();
         io.shutdown();

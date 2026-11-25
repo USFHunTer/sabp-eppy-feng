@@ -1,5 +1,11 @@
 # Release notes
 
+## v0.11.1: steady whole-book notification
+
+- **Fixed the flashing progress bar** in the "Transcribe the whole book" notification. The background service and the
+  transcriber kept restarting each other, and every restart re-posted the notification without its bar. The service
+  now starts once and keeps its last notification.
+
 ## v0.11.0: skipped passages, whole-book transcription (sabp-eppy-feng fork)
 
 - **Renamed fork:** this repository is now `USFHunTer/sabp-eppy-feng`, shown in Morphe Manager as **SABP Eppy Feng**.
