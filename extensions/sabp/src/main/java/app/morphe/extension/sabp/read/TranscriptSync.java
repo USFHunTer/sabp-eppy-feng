@@ -129,12 +129,14 @@ final class TranscriptSync {
                 if (heard.get(i).equals(text[a])) { i++; a++; }
                 else if (a < z && heard.get(i).equals(text[a + 1])) { i++; a += 2; } // word the recogniser missed
                 else if (i < j && heard.get(i + 1).equals(text[a])) { i += 2; a++; } // word it added
+                else if (a < z && heard.get(i).equals(text[a] + text[a + 1])) { i++; a += 2; } // "door-nail" heard as "doornail"
                 else break;
             }
             while (i <= j && a <= z) { // backwards from c
                 if (heard.get(j).equals(text[z])) { j--; z--; }
                 else if (a < z && heard.get(j).equals(text[z - 1])) { j--; z -= 2; }
                 else if (i < j && heard.get(j - 1).equals(text[z])) { j -= 2; z--; }
+                else if (a < z && heard.get(j).equals(text[z - 1] + text[z])) { j--; z -= 2; }
                 else break;
             }
             if (z - a + 1 >= MIN_SKIP) out.add(new int[]{a, z});

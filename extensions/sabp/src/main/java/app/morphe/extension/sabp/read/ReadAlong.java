@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.OpenableColumns;
+import android.widget.Toast;
 
 import org.json.JSONObject;
 
@@ -86,6 +87,8 @@ public final class ReadAlong {
     private String interruptedNotice;
     // Transcript matching (on-device transcript ↔ document).
     private java.util.Map<String, double[]> tsCache;
+    /** Set when a document loads: the next transcript sync first imports transcript files made on the PC. */
+    private boolean importCheck;
     private String tsCacheDoc;
     private int transcriptPassages;
     private List<int[]> skipped = new ArrayList<>(); // {first, last} word the narrator skips, in order
@@ -313,6 +316,7 @@ public final class ReadAlong {
     private void load(boolean fresh) {
         final String doc = docUri, name = docName, folder = folderUri;
         cancelled = false;
+        importCheck = true;
         errorTitle = null;
         set(State.LOADING, "Extracting text", fresh ? "Reading " + (name != null ? name : "the document") + "…" : "Opening text…");
         worker.execute(() -> {
@@ -701,11 +705,32 @@ public final class ReadAlong {
             return;
         }
         Transcriber tr = Transcriber.get(c);
+        if (importCheck) {
+            importCheck = false;
+            worker.execute(() -> {
+                int n = 0;
+                try {
+                    n = tr.importTranscripts(b);
+                } catch (Throwable e) {
+                    EppyDiag.error("readalong", "transcript import failed: " + e);
+                }
+                if (n > 0) { // match the new words from scratch
+                    tsyncFile(folder, doc).delete();
+                    tsCache = null;
+                }
+                final int imported = n;
+                main.post(() -> {
+                    if (imported > 0) Toast.makeText(c, "Imported transcript for " + imported + " file(s)", Toast.LENGTH_LONG).show();
+                    syncTranscript();
+                });
+            });
+            return;
+        }
         if (!tr.enabled(folder)) return;
         final int gen = ++tsGeneration;
         worker.execute(() -> {
             try {
-                File cf = new File(dir(), "tsync_" + Integer.toHexString((folder + "|" + doc).hashCode()) + ".json");
+                File cf = tsyncFile(folder, doc);
                 if (tsCache == null || !doc.equals(tsCacheDoc)) {
                     tsCache = cf.exists() ? TranscriptSync.fromJson(new JSONObject(read(cf))) : new java.util.HashMap<>();
                     tsCacheDoc = doc;
@@ -734,6 +759,10 @@ public final class ReadAlong {
         File d = new File(c.getFilesDir(), "eppy_readalong");
         d.mkdirs();
         return d;
+    }
+
+    private File tsyncFile(String folder, String doc) {
+        return new File(dir(), "tsync_" + Integer.toHexString((folder + "|" + doc).hashCode()) + ".json");
     }
 
     private File textCache(String doc) {

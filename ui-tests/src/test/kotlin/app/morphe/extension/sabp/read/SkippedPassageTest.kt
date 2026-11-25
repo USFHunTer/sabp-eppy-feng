@@ -25,6 +25,18 @@ class SkippedPassageTest {
     }
 
     @Test
+    fun aHyphenatedWordHeardAsOneWordIsStillNarrated() {
+        // The text writes "door-nail" (two words), the recogniser hears "doornail", on both sides of the jump.
+        val text = Array(300) { "w$it" }.also { it[18] = "door"; it[19] = "nail"; it[120] = "door"; it[121] = "nail" }
+        val heard = (0 until 18).map { "w$it" } + "doornail" + "doornail" + (122 until 140).map { "w$it" }
+        val chain = listOf(cand(0.0, 5.0, 0, 13, 0, 13), cand(8.0, 13.0, 126, 139, 24, 37))
+        val sk = TranscriptSync.skipped(text, chain, heard)
+        assertEquals(1, sk.size)
+        assertEquals(20, sk[0][0])
+        assertEquals(119, sk[0][1])
+    }
+
+    @Test
     fun audioNotTranscribedYetIsNotASkip() {
         val chain = listOf(cand(0.0, 5.0, 0, 13, 0, 13), cand(300.0, 305.0, 126, 139, 27, 40))
         assertTrue(TranscriptSync.skipped(text, chain, heard).isEmpty())
