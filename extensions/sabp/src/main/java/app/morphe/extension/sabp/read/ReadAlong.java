@@ -88,6 +88,7 @@ public final class ReadAlong {
     private java.util.Map<String, double[]> tsCache;
     private String tsCacheDoc;
     private int transcriptPassages;
+    private List<int[]> skipped = new ArrayList<>(); // {first, last} word the narrator skips, in order
     private boolean tsScheduled;
     private volatile int tsGeneration;
 
@@ -216,6 +217,7 @@ public final class ReadAlong {
         failuresInRow = 0;
         samplesTried = samplesAccepted = samplesRejected = 0;
         transcriptPassages = 0;
+        skipped = new ArrayList<>();
         tsGeneration++;
         errorTitle = null;
         if (docUri == null) {
@@ -374,6 +376,7 @@ public final class ReadAlong {
                 alignChapters();
                 updateReadyMessage();
                 transcriptPassages = 0;
+                skipped = new ArrayList<>();
                 hintNames(result, folder);
                 scheduleTranscriptSync(500);
             });
@@ -458,7 +461,27 @@ public final class ReadAlong {
     public int unitAt(double bookSeconds) {
         if (text == null) return 0;
         alignment.setBounds(unitCount(), bookSeconds());
-        return alignment.wordAt(bookSeconds);
+        int w = alignment.wordAt(bookSeconds);
+        int[] sk = skippedAt(w);
+        if (sk == null) return w;
+        // The narration jumps over a skipped passage: never follow along inside it.
+        return w - sk[0] < sk[1] - w ? Math.max(0, sk[0] - 1) : Math.min(unitCount() - 1, sk[1] + 1);
+    }
+
+    /** The skipped passage {first, last word} containing a word, or null. */
+    public int[] skippedAt(int word) {
+        for (int[] sk : skipped) {
+            if (word < sk[0]) return null;
+            if (word <= sk[1]) return sk;
+        }
+        return null;
+    }
+
+    /** Skipped passages overlapping words [from, to], in order. */
+    public List<int[]> skippedIn(int from, int to) {
+        ArrayList<int[]> out = new ArrayList<>();
+        for (int[] sk : skipped) if (sk[1] >= from && sk[0] <= to) out.add(sk);
+        return out;
     }
 
     public double timeOfUnit(int unit) {
@@ -683,12 +706,14 @@ public final class ReadAlong {
                     tsCacheDoc = doc;
                 }
                 int before = tsCache.size();
-                List<Alignment.Anchor> chain = TranscriptSync.run(t, b, tr, tsCache, () -> gen != tsGeneration);
+                List<int[]> sk = new ArrayList<>();
+                List<Alignment.Anchor> chain = TranscriptSync.run(t, b, tr, tsCache, () -> gen != tsGeneration, sk);
                 if (chain == null) return;
                 if (tsCache.size() != before) write(cf, TranscriptSync.toJson(tsCache).toString());
                 main.post(() -> {
                     if (gen != tsGeneration || text != t) return;
                     transcriptPassages = alignment.setTranscriptChain(chain) / 2;
+                    skipped = sk;
                     if (state == State.READY) updateReadyMessage();
                     else changed();
                 });

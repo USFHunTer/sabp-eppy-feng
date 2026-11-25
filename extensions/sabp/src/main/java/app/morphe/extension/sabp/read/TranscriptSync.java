@@ -23,10 +23,13 @@ import app.morphe.extension.sabp.EppyBook;
  */
 final class TranscriptSync {
     static final int CHUNK = 14;
+    /** Smaller differences are recognition noise, not a skipped passage. */
+    static final int MIN_SKIP = 30;
 
     static final class Cand {
         double t0, t1; // book seconds
         int w0, w1;    // text words
+        int i0, i1;    // transcript words (index into the run's word list)
         float conf;
     }
 
@@ -39,10 +42,12 @@ final class TranscriptSync {
 
     /**
      * Matches new transcript chunks (results cached in {@code cache}, key file@ms, empty array for
-     * "no match") and returns the chained anchors. Returns null if cancelled.
+     * "no match") and returns the chained anchors. Skipped passages ({first, last} text word) are
+     * added to {@code skipped}. Returns null if cancelled.
      */
-    static List<Alignment.Anchor> run(BookText text, EppyBook b, Transcriber tr, Map<String, double[]> cache, Cancel cancel) {
+    static List<Alignment.Anchor> run(BookText text, EppyBook b, Transcriber tr, Map<String, double[]> cache, Cancel cancel, List<int[]> skipped) {
         List<Cand> cands = new ArrayList<>();
+        ArrayList<String> heard = new ArrayList<>();
         Cand prev = null;
         for (EppyBook.FileItem f : b.files) {
             if (f.start < 0) continue;
@@ -57,6 +62,7 @@ final class TranscriptSync {
                 if (n != null && !n.isEmpty()) {
                     if (chunk.isEmpty()) c0 = w.t0;
                     chunk.add(n);
+                    heard.add(n);
                     c1 = w.t1;
                 }
                 if (chunk.size() < CHUNK && w != null) continue;
@@ -85,6 +91,8 @@ final class TranscriptSync {
                         cd.w0 = (int) hit[2];
                         cd.w1 = (int) hit[3];
                         cd.conf = (float) hit[4];
+                        cd.i1 = heard.size() - 1;
+                        cd.i0 = cd.i1 - chunk.size() + 1;
                         cands.add(cd);
                         prev = cd;
                     }
@@ -92,11 +100,50 @@ final class TranscriptSync {
                 chunk.clear();
             }
         }
-        return chain(cands);
+        List<Cand> best = chain(cands);
+        skipped.addAll(skipped(text.words, best, heard));
+        ArrayList<Alignment.Anchor> out = new ArrayList<>();
+        for (Cand c : best) {
+            out.add(new Alignment.Anchor(c.t0, c.w0, Alignment.SRC_TRANSCRIPT, c.conf));
+            out.add(new Alignment.Anchor(c.t1, Math.max(c.w0, c.w1), Alignment.SRC_TRANSCRIPT, c.conf));
+        }
+        return out;
+    }
+
+    /**
+     * Skipped passages: document words between two neighbouring chain links that none of the
+     * transcribed words between them account for. Narrated words right after the first link and
+     * right before the second are matched word by word and left out of the passage.
+     */
+    static List<int[]> skipped(String[] text, List<Cand> chain, List<String> heard) {
+        ArrayList<int[]> out = new ArrayList<>();
+        for (int k = 1; k < chain.size(); k++) {
+            Cand p = chain.get(k - 1), c = chain.get(k);
+            int between = c.i0 - p.i1 - 1;
+            // Time without transcribed words is audio not transcribed yet (or long silence): can't tell.
+            if (between < 0 || c.t0 - p.t1 > between + 8) continue;
+            int a = p.w1 + 1, z = c.w0 - 1;
+            if (z - a + 1 - between < MIN_SKIP) continue;
+            int i = p.i1 + 1, j = c.i0 - 1;
+            while (i <= j && a <= z) { // forwards from p
+                if (heard.get(i).equals(text[a])) { i++; a++; }
+                else if (a < z && heard.get(i).equals(text[a + 1])) { i++; a += 2; } // word the recogniser missed
+                else if (i < j && heard.get(i + 1).equals(text[a])) { i += 2; a++; } // word it added
+                else break;
+            }
+            while (i <= j && a <= z) { // backwards from c
+                if (heard.get(j).equals(text[z])) { j--; z--; }
+                else if (a < z && heard.get(j).equals(text[z - 1])) { j--; z -= 2; }
+                else if (i < j && heard.get(j - 1).equals(text[z])) { j -= 2; z--; }
+                else break;
+            }
+            if (z - a + 1 >= MIN_SKIP) out.add(new int[]{a, z});
+        }
+        return out;
     }
 
     /** Heaviest chain with increasing time and text position. */
-    static List<Alignment.Anchor> chain(List<Cand> cands) {
+    static List<Cand> chain(List<Cand> cands) {
         Collections.sort(cands, (a, b) -> Double.compare(a.t0, b.t0));
         int n = cands.size();
         float[] score = new float[n];
@@ -122,12 +169,8 @@ final class TranscriptSync {
             }
             if (best < 0 || score[i] > score[best]) best = i;
         }
-        ArrayList<Alignment.Anchor> out = new ArrayList<>();
-        for (int i = best; i >= 0; i = from[i]) {
-            Cand c = cands.get(i);
-            out.add(new Alignment.Anchor(c.t1, Math.max(c.w0, c.w1), Alignment.SRC_TRANSCRIPT, c.conf));
-            out.add(new Alignment.Anchor(c.t0, c.w0, Alignment.SRC_TRANSCRIPT, c.conf));
-        }
+        ArrayList<Cand> out = new ArrayList<>();
+        for (int i = best; i >= 0; i = from[i]) out.add(cands.get(i));
         Collections.reverse(out);
         return out;
     }
