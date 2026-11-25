@@ -4,8 +4,12 @@
 
 **Document**: the EPUB or PDF the user pairs with an audiobook. Used as a reference text.
 
-**Transcript**: text made on the phone from the audiobook's audio, with timings. Built a little at a time.
-_Avoid_: text recognition (nothing is recognised in the document; the audio is transcribed).
+**Transcript**: text made from the audiobook's audio, with a timing for each word. One per audio file. Made either on the phone, a little at a time, or on the PC in one go and then imported.
+_Avoid_: text recognition (nothing is recognised in the document; the audio is transcribed); PC transcript (once imported it is the same thing).
+
+**Transcript file**: a complete transcript of one audio file, made on the PC and put next to that audio file in the book folder, for eppy to import.
+
+**Import**: eppy takes a transcript file as its audio file's transcript, replacing whatever the phone had transcribed of that file.
 
 **Transcription progress**: how much of the audiobook's audio has a transcript, shown as "X of Y transcribed (Z%)".
 
