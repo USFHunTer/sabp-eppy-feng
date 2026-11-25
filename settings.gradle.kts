@@ -1,4 +1,4 @@
-rootProject.name = "sabp-eppy-patches"
+rootProject.name = "sabp-eppy-feng"
 
 pluginManagement {
     repositories {

@@ -77,7 +77,7 @@ public final class BookInfo {
     }
 
     public static final Provider[] PROVIDERS = {new OpenLibrary(), new GoogleBooks()};
-    private static final String UA = "eppy-sabp/0.4 (https://github.com/epabafree/sabp-eppy-patches)";
+    private static final String UA = "eppy-sabp/0.4 (https://github.com/USFHunTer/sabp-eppy-feng)";
     private static final long CACHE_DAYS = 90;
 
     private BookInfo() {

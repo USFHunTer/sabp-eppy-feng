@@ -1,13 +1,13 @@
-group = "io.github.epabafree"
+group = "io.github.usfhunter"
 
 patches {
     about {
-        name = "SABP Eppy Patches"
-        description = "Morphe patches that give Smart AudioBook Player a modern Material You look and new features."
-        source = "git@github.com:epabafree/sabp-eppy-patches.git"
-        author = "epabafree"
+        name = "SABP Eppy Feng"
+        description = "Morphe patches that give Smart AudioBook Player a modern Material You look and new features. Fork of epabafree's SABP Eppy Patches with skipped-passage marking and whole-book transcription."
+        source = "git@github.com:USFHunTer/sabp-eppy-feng.git"
+        author = "USFHunTer (fork of epabafree)"
         contact = "na"
-        website = "https://github.com/epabafree/sabp-eppy-patches"
+        website = "https://github.com/USFHunTer/sabp-eppy-feng"
         license = "GPLv3"
     }
 }

@@ -1,4 +1,8 @@
-# eppy
+# eppy (Feng fork)
+
+> This is **sabp-eppy-feng**, a fork of [epabafree/sabp-eppy-patches](https://github.com/epabafree/sabp-eppy-patches)
+> that adds red marking of passages the narrator skips and "Transcribe the whole book". In Morphe Manager it shows as
+> **SABP Eppy Feng**; use it instead of the original source, not alongside it.
 
 **eppy** is a set of [Morphe](https://morphe.software) patches that give **Smart AudioBook Player** (SABP) a modern
 Material 3 player. SABP's own playback engine, library, bookmarks and settings stay underneath.
@@ -169,7 +173,7 @@ Integration research and why each was deferred: [CREDITS.md](CREDITS.md#evaluate
 ## Using the patches
 
 1. Install **Morphe Manager**.
-2. Add the patch sources `https://github.com/epabafree/sabp-eppy-patches` and
+2. Add the patch sources `https://github.com/USFHunTer/sabp-eppy-feng` and
    [Hooman's](https://github.com/arandomhooman/hoomans-morphe-patches).
 3. Pick the SABP 11.7.8 APK, select **eppy** (plus Hooman's SABP patch, and optionally Material You theme or Modern font),
    then patch.

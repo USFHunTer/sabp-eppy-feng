@@ -1,6 +1,6 @@
 # Credits and open-source licences
 
-eppy (repository: sabp-eppy-patches) is GPL-3.0. Below is everything it uses, depends on, or is compatible with, along with how each item is used.
+eppy (repository: sabp-eppy-feng, a fork of epabafree/sabp-eppy-patches) is GPL-3.0. Below is everything it uses, depends on, or is compatible with, along with how each item is used.
 Nothing here implies endorsement by the original authors.
 
 | Project | Where | Author / maintainer | Licence | How it's used |

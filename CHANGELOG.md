@@ -1,6 +1,8 @@
 # Release notes
 
-## Unreleased
+## v0.11.0: skipped passages, whole-book transcription (sabp-eppy-feng fork)
+
+- **Renamed fork:** this repository is now `USFHunTer/sabp-eppy-feng`, shown in Morphe Manager as **SABP Eppy Feng**.
 
 - **Skipped passages in red:** with a book paired and the audiobook transcribed, text the narrator never
   reads (30+ words, with transcribed audio on both sides) gets a light red tint and a "Not in the audiobook"
