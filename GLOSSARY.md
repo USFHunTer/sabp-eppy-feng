@@ -29,3 +29,9 @@ _Avoid_: force read, read all the file.
 _Avoid_: reading mode, full-screen player.
 
 **Read chip**: the first chip in the row under the player controls; opens the Read tab.
+
+**Character note**: the short line under a character's name in the book's character list, written by the user or suggested.
+
+**Suggested note**: a character note Gemini proposes for the user to edit and save. *From the book*: only from the document's text up to the listening position, so it can't spoil. *From the web*: general information found by searching, which may spoil.
+
+**Listening position**: the document word the narration has reached; text after it hasn't been heard yet.
