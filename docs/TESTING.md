@@ -126,7 +126,9 @@ On the tablet:
 2. Characters → Add: with the switch on, the two buttons show under the note; off, they don't.
 3. Early in a volume, Suggest from the book for a character who appears later says there's no mention yet.
 4. For Tobin, a one-line note appears in the note field; with a note already typed it's added on a new line.
-5. Search the web for a character gives a general line (may spoil).
+5. Search the web for a character gives a general line (may spoil). On a free key it works through Gemini 2.5
+   Flash-Lite; Diagnostics shows the first refusal (429 on the newest model) and nothing secret.
+5b. Typing a name or note: the keyboard pushes the editor up; the field stays visible.
 6. Read tab → long-press a name → Add to characters: same buttons.
 7. Settings → Back up: the saved file doesn't contain the key.
 

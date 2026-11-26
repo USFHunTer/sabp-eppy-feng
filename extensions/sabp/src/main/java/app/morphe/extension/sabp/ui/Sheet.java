@@ -46,7 +46,7 @@ public final class Sheet {
             navInset = Math.max(wi.getInsets(android.view.WindowInsets.Type.systemBars()).bottom,
                     wi.getInsets(android.view.WindowInsets.Type.ime()).bottom);
         }
-        sheet.setPadding(0, Ui.dp(c, 12), 0, Ui.dp(c, 24) + navInset);
+        setBottomInset(navInset);
 
         View handle = new View(c);
         handle.setBackground(Ui.rounded(t.outline, Ui.dp(c, 2)));
@@ -70,6 +70,17 @@ public final class Sheet {
                 Math.min(maxW, c.getResources().getDisplayMetrics().widthPixels), ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
         overlay.addView(sheet, sl);
+    }
+
+    /**
+     * Space taken at the bottom by the navigation bar or, while typing, the keyboard. The activity
+     * calls this when it changes, so a field in the sheet is never hidden under the keyboard: the
+     * sheet's content rises above it and scrolls if it no longer fits.
+     */
+    public void setBottomInset(int px) {
+        sheet.setPadding(0, Ui.dp(c, 12), 0, Ui.dp(c, 24) + px);
+        View focus = sheet.findFocus();
+        if (focus != null) focus.post(() -> focus.requestRectangleOnScreen(new android.graphics.Rect(0, 0, focus.getWidth(), focus.getHeight()), true));
     }
 
     public Sheet onDismiss(Runnable r) {

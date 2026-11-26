@@ -30,10 +30,21 @@ public final class Gemini {
     static final String FALLBACK_LITE = "gemini-flash-lite-latest", FALLBACK_FLASH = "gemini-flash-latest";
 
     public static final class Failure extends Exception {
+        /** HTTP status, or 0 when it isn't an HTTP error. */
+        public final int code;
+
         public Failure(String message) {
+            this(message, 0);
+        }
+
+        Failure(String message, int code) {
             super(message);
+            this.code = code;
         }
     }
+
+    static final String NO_FREE_SEARCH = "Google doesn't include web search in the free tier for this key right now. "
+            + "Suggest from the book still works; or turn on billing for the key in Google AI Studio.";
 
     private Gemini() {
     }
@@ -130,7 +141,11 @@ public final class Gemini {
             msg = new JSONObject(body).getJSONObject("error").optString("message", "");
         } catch (Throwable ignored) {
         }
-        if (code == 429) return "Google's free limit is used up for now. Try again later.";
+        if (code == 429) {
+            // "limit: 0": this model (or web search with it) has no free allowance at all, rather than a used-up one.
+            if (msg.contains("limit: 0")) return "This isn't included in Google's free tier for your key.";
+            return "Google's free limit is used up for now. Try again later.";
+        }
         if (msg.toLowerCase(java.util.Locale.ROOT).contains("api key")) return "The API key isn't valid. Check it in Settings → AI character notes.";
         if (code == 403) return "This key isn't allowed to use Gemini (Settings → AI character notes).";
         if (msg.length() > 120) msg = msg.substring(0, 120) + "…";
@@ -141,6 +156,11 @@ public final class Gemini {
 
     /** The newest stable Flash-Lite (or Flash) model in Google's list; null if none. */
     static String pickModel(String listJson, boolean lite) throws Exception {
+        return pickModel(listJson, lite, Double.MAX_VALUE);
+    }
+
+    /** The newest stable one with a version below {@code below}. */
+    static String pickModel(String listJson, boolean lite, double below) throws Exception {
         JSONArray models = new JSONObject(listJson).optJSONArray("models");
         String best = null;
         double bestV = -1;
@@ -151,7 +171,7 @@ public final class Gemini {
             JSONArray methods = m.optJSONArray("supportedGenerationMethods");
             if (methods == null || !methods.toString().contains("\"generateContent\"")) continue;
             double v = Double.parseDouble(mm.group(2));
-            if (v > bestV) {
+            if (v < below && v > bestV) {
                 bestV = v;
                 best = mm.group(1);
             }
@@ -166,14 +186,42 @@ public final class Gemini {
         return noteFrom(post(c, bookRequest(title, name, excerpts)));
     }
 
-    /** A suggested note from a web search. Blocking. */
+    /**
+     * A suggested note from a web search. Blocking. Google's free tier has no web search on Gemini 3 and
+     * newer (a 429), but still a daily allowance on 2.x Flash-Lite: that one is tried next.
+     */
     public static String fromWeb(Context c, String title, String author, String name) throws Exception {
-        return noteFrom(post(c, webRequest(title, author, name)));
+        JSONObject r = webRequest(title, author, name);
+        try {
+            return noteFrom(post(c, model(c), r));
+        } catch (Failure f) {
+            if (f.code != 429) throw f;
+            String older = searchModel(c);
+            if (older == null || older.equals(model(c))) throw new Failure(NO_FREE_SEARCH, 429);
+            try {
+                return noteFrom(post(c, older, r));
+            } catch (Failure g) {
+                throw g.code == 429 ? new Failure(NO_FREE_SEARCH, 429) : g;
+            }
+        }
+    }
+
+    /** The newest stable 2.x Flash-Lite, for web search on the free tier; null if Google no longer lists one. */
+    static String searchModel(Context c) {
+        String m = prefs(c).getString("model:search", null);
+        if (m != null) return m;
+        try {
+            m = pickModel(http(c, BASE + "models?pageSize=1000", null), true, 3.0);
+        } catch (Throwable e) {
+            EppyDiag.log("ai", "model list: " + e.getMessage());
+        }
+        if (m != null) prefs(c).edit().putString("model:search", m).apply();
+        return m;
     }
 
     /** One tiny request to check the key and the model. Blocking. Returns the model used. */
     public static String test(Context c) throws Exception {
-        prefs(c).edit().remove(modelKey(c)).apply(); // look the model up again
+        prefs(c).edit().remove(modelKey(c)).remove("model:search").apply(); // look the models up again
         JSONObject r = request("Reply with the word OK.", "OK?", false);
         noteFrom(post(c, r));
         return model(c);
@@ -199,8 +247,12 @@ public final class Gemini {
     }
 
     private static String post(Context c, JSONObject body) throws Exception {
+        return post(c, model(c), body);
+    }
+
+    private static String post(Context c, String model, JSONObject body) throws Exception {
         if (key(c).isEmpty()) throw new Failure("Enter your Gemini API key in Settings → AI character notes.");
-        return http(c, BASE + "models/" + model(c) + ":generateContent", body.toString());
+        return http(c, BASE + "models/" + model + ":generateContent", body.toString());
     }
 
     private static String http(Context c, String url, String body) throws Exception {
@@ -227,8 +279,10 @@ public final class Gemini {
             String text = read(code / 100 == 2 ? con.getInputStream() : con.getErrorStream());
             if (code / 100 != 2) {
                 String m = errorMessage(code, text);
-                EppyDiag.log("ai", "HTTP " + code + ": " + m);
-                throw new Failure(m);
+                // Google's own wording (which quota, which model), for Diagnostics. It never contains the key.
+                String raw = text.replaceAll("\\s+", " ");
+                EppyDiag.log("ai", "HTTP " + code + " " + url.replaceAll(".*/models/", "") + ": " + (raw.length() > 400 ? raw.substring(0, 400) + "…" : raw));
+                throw new Failure(m, code);
             }
             return text;
         } finally {

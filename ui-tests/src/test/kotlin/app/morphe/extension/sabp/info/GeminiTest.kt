@@ -65,5 +65,14 @@ class GeminiTest {
         assertEquals("gemini-3.5-flash-lite", Gemini.pickModel(list, true))
         assertEquals("gemini-3.5-flash", Gemini.pickModel(list, false))
         assertNull(Gemini.pickModel("""{"models":[]}""", true))
+        // Web search on the free tier: the newest 2.x Flash-Lite.
+        assertEquals("gemini-2.5-flash-lite", Gemini.pickModel(list, true, 3.0))
+        assertNull(Gemini.pickModel(list, false, 3.0))
+    }
+
+    @Test
+    fun noFreeAllowanceIsNotCalledUsedUp() {
+        val zero = """{"error":{"code":429,"message":"Quota exceeded for metric: generativelanguage.googleapis.com/search_grounding_request_count, limit: 0, model: gemini-3.5-flash-lite","status":"RESOURCE_EXHAUSTED"}}"""
+        assertEquals("This isn't included in Google's free tier for your key.", Gemini.errorMessage(429, zero))
     }
 }

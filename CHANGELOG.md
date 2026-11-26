@@ -1,5 +1,13 @@
 # Release notes
 
+## v0.15.1: typing in sheets, web search on a free key
+
+- **The keyboard no longer covers what you type:** the character editor (and every other sheet with a text field)
+  moves up above the keyboard and scrolls if needed.
+- **Search the web works on a free Gemini key:** Google's free tier has no web search on its newest models, which
+  showed "free limit is used up" at once. eppy now uses Gemini 2.5 Flash-Lite for web search when that happens. If
+  Google offers no free web search at all, the message says so, and Diagnostics shows Google's own wording.
+
 ## v0.15.0: block Google billing logging
 
 - **New separate patch, Block Google billing logging:** the Google Play billing library inside SABP no longer sends

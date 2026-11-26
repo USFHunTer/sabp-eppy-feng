@@ -424,6 +424,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
                 frame.setPadding(0, 0, 0, Math.max(bars.bottom, imeBottom));
             }
             if (overlayPane != null) overlayPane.root.setPadding(0, 0, 0, Math.max(bars.bottom, imeBottom));
+            if (Sheet.current != null) Sheet.current.setBottomInset(Math.max(bars.bottom, imeBottom));
             applyContentInset();
             return WindowInsets.CONSUMED;
         });

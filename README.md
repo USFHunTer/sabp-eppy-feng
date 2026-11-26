@@ -176,7 +176,9 @@ Then the character editor (Characters page, or *Add to characters* from the Read
 
 - **Suggest from the book:** one line from the paragraphs that mention the name *before where you are listening* (the
   first 4 and the latest 8, up to about 3,000 words). It can't spoil. Needs the book's EPUB or text PDF.
-- **Search the web (may spoil):** one line from Gemini with Google Search: general, wiki-style information.
+- **Search the web (may spoil):** one line from Gemini with Google Search: general, wiki-style information. Google's
+  free tier doesn't include web search on its newest models, so on a free key eppy uses Gemini 2.5 Flash-Lite for it,
+  which still has a free daily allowance; if Google drops that too, the editor says so.
 
 A suggestion fills an empty note or goes on a new line under yours; nothing is saved until you tap Save.
 
