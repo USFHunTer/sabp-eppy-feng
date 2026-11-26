@@ -922,7 +922,9 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
         }
         EppyBook bk = host.player().book();
         if (bk != null && tr.enabled(bk.folderUri)) {
-            if (tr.modelReady()) {
+            // Done: nothing to speed up or stop, and turning it off would stop matching against the transcript.
+            boolean done = tr.state() == Transcriber.State.DONE;
+            if (tr.modelReady() && !done) {
                 sh.item(EppyIcon.SPEED, tr.boosted() ? "Back to gentle background work" : "Speed up for 30 minutes",
                         tr.boosted() ? null : "Works like while charging: more cores, no rests. Uses more battery", () -> {
                             tr.boost(tr.boosted() ? 0 : 30 * 60_000L);
@@ -934,14 +936,16 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
                     tr.setWholeBook(bk.folderUri, null, false);
                     rebuild();
                 });
-            } else if (tr.state() != Transcriber.State.DONE) {
+            } else if (!done) {
                 sh.item(EppyIcon.SUBTITLES, "Transcribe the whole book", "Keeps going until it's 100% done, even in the background", () -> startTranscript(false, true));
             }
             sh.item(EppyIcon.DOWNLOAD, "Speech model", tr.model().label, () -> askDownload(null));
-            sh.item(EppyIcon.CLOSE, "Stop transcribing this book", "What's done is kept; turn it on again any time", () -> {
-                tr.setEnabled(bk.folderUri, false);
-                rebuild();
-            });
+            if (!done) {
+                sh.item(EppyIcon.CLOSE, "Stop transcribing this book", "What's done is kept; turn it on again any time", () -> {
+                    tr.setEnabled(bk.folderUri, false);
+                    rebuild();
+                });
+            }
             sh.item(EppyIcon.DELETE, "Delete the transcript", "Removes eppy's copy; .transcript.srt files in the book folder stay", () -> {
                 tr.setEnabled(bk.folderUri, false);
                 tr.forget(bk.folderUri);

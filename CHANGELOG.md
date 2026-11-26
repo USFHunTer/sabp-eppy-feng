@@ -1,5 +1,11 @@
 # Release notes
 
+## v0.15.3: tidier read-along menu for finished books
+
+- **Once a book is fully transcribed**, the Read tab's ⋮ menu no longer offers "Speed up for 30 minutes" or "Stop
+  transcribing this book". There's nothing left to do, and stopping would also stop read-along from matching the text
+  against the transcript. "Delete the transcript" is still there.
+
 ## v0.15.2: characters without leaving the book
 
 - **Characters open over the player:** Details → Characters, the Read tab's ⋮ menu → Characters, and More →
