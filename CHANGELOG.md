@@ -1,5 +1,9 @@
 # Release notes
 
+## v0.14.1: book lookups don't identify you
+
+- **Open Library lookups** name eppy with a generic app name instead of the GitHub repository's address.
+
 ## v0.14.0: suggested character notes
 
 - **Suggest a character's note with Gemini** (Settings → AI character notes, off by default, your own free Google key).
