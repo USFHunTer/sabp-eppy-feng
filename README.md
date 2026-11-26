@@ -152,7 +152,7 @@ eppy Settings → **Book information sources**:
 
 | Provider | Account | Sends | Notes |
 |---|---|---|---|
-| [Open Library](https://openlibrary.org/developers/api) | none | title, author | Identified by User-Agent as Open Library asks (about 3 requests/s). Licence of the data not verified; it's cached on your phone only. |
+| [Open Library](https://openlibrary.org/developers/api) | none | title, author | eppy names itself with a generic app name, nothing that identifies you (about 3 requests/s). Licence of the data not verified; it's cached on your phone only. |
 | [Google Books](https://developers.google.com/books/docs/v1/using) | **your own API key** (Google's docs require one) | title, author, your key | Off until a key is entered. |
 
 - **Results:** you pick from a list of candidates, and each shown field names its source. Results are cached for 90 days.

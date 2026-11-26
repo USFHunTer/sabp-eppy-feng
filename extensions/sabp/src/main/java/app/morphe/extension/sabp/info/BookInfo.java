@@ -77,7 +77,8 @@ public final class BookInfo {
     }
 
     public static final Provider[] PROVIDERS = {new OpenLibrary(), new GoogleBooks()};
-    private static final String UA = "eppy-sabp/0.4 (https://github.com/USFHunTer/sabp-eppy-feng)";
+    // A generic app name: no repository, account or contact details that would identify the user.
+    private static final String UA = "eppy-sabp (audiobook player add-on)";
     private static final long CACHE_DAYS = 90;
 
     private BookInfo() {
@@ -239,8 +240,8 @@ public final class BookInfo {
         }
 
         public String about() {
-            return "No account or key. Sends the book's title and author to openlibrary.org. eppy identifies itself with a "
-                    + "User-Agent as Open Library asks, and stays within its rate limits.";
+            return "No account or key. Sends the book's title and author to openlibrary.org. eppy names itself with a generic "
+                    + "app name (nothing that identifies you) and stays within its rate limits.";
         }
 
         public boolean needsKey() {
