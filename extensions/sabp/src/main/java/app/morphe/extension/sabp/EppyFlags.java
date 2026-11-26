@@ -15,8 +15,9 @@ public final class EppyFlags {
     public static final String STATISTICS = "statistics";
     public static final String TERM_LOOKUP = "termLookup";
     public static final String GESTURES = "gestures";
+    public static final String AI_NOTES = "aiNotes";
 
-    public static final String[] ALL = {READ_ALONG, ONLINE_LOOKUP, STATISTICS, BLUR, TERM_LOOKUP, GESTURES};
+    public static final String[] ALL = {READ_ALONG, ONLINE_LOOKUP, STATISTICS, BLUR, TERM_LOOKUP, GESTURES, AI_NOTES};
 
     private EppyFlags() {
     }
@@ -43,6 +44,7 @@ public final class EppyFlags {
             case BLUR: return "Blur effects";
             case TERM_LOOKUP: return "Word and term lookup";
             case GESTURES: return "Cover gestures (double-tap seek)";
+            case AI_NOTES: return "AI character notes (Gemini)";
             default: return flag;
         }
     }
