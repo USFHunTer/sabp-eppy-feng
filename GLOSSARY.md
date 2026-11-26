@@ -35,3 +35,6 @@ _Avoid_: reading mode, full-screen player.
 **Suggested note**: a character note Gemini proposes for the user to edit and save. *From the book*: only from the document's text up to the listening position, so it can't spoil. *From the web*: general information found by searching, which may spoil.
 
 **Listening position**: the document word the narration has reached; text after it hasn't been heard yet.
+
+**Playback position**: where the listener is in the audiobook's audio: which audio file, and how far into it. It's the position the listener continues from on another device.
+_Avoid_: listening position (that is a document word), progress (too vague: it could also mean transcription progress or statistics).
