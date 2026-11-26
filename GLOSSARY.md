@@ -36,5 +36,7 @@ _Avoid_: reading mode, full-screen player.
 
 **Listening position**: the document word the narration has reached; text after it hasn't been heard yet.
 
+**Book folder**: the folder holding one audiobook's audio files, along with what belongs to that book: its playback position, bookmarks, character notes, transcript files, and the document for read along. Copy or sync the book folder, and all of these go with the book.
+
 **Playback position**: where the listener is in the audiobook's audio: which audio file, and how far into it. It's the position the listener continues from on another device.
 _Avoid_: listening position (that is a document word), progress (too vague: it could also mean transcription progress or statistics).
