@@ -17,9 +17,9 @@ class WordsTest {
 
     @Test
     fun offsetToWord() {
-        val w = wordAt(1, "Changing")
-        assertEquals("changing", text.words[w])
-        assertEquals("changing", text.words[Words.at(text, 1, p.indexOf("Changing") + 3)]) // inside the word
+        val w = wordAt(1, "Rising")
+        assertEquals("rising", text.words[w])
+        assertEquals("rising", text.words[Words.at(text, 1, p.indexOf("Rising") + 3)]) // inside the word
         assertEquals("mara", text.words[Words.at(text, 1, p.indexOf("Mara") - 1)])    // the space before: next word
         assertEquals("tobin", text.words[Words.at(text, 1, p.length + 10)])              // past the end: last word
     }
@@ -32,7 +32,7 @@ class WordsTest {
 
     @Test
     fun namesGrowOverNeighbouringCapitals() {
-        assertEquals("Mara Rising Dawn", Words.name(text, wordAt(1, "Changing")))
+        assertEquals("Mara Rising Dawn", Words.name(text, wordAt(1, "Rising")))
         assertEquals("Mara Rising Dawn", Words.name(text, wordAt(1, "Mara")))   // not over "Then"
         assertEquals("Tobin", Words.name(text, wordAt(1, "Tobin's")))                 // a possessive ends the name
         assertEquals("Ilsa", Words.name(text, wordAt(1, "Ilsa")))
@@ -43,7 +43,7 @@ class WordsTest {
 
     @Test
     fun sentenceWithItsPunctuation() {
-        assertEquals("Then Mara Rising Dawn smiled.", Words.sentence(text, wordAt(1, "Star")))
+        assertEquals("Then Mara Rising Dawn smiled.", Words.sentence(text, wordAt(1, "Dawn")))
         assertEquals("Tobin's shadow moved, and Ilsa looked at Tobin.", Words.sentence(text, wordAt(1, "Ilsa")))
     }
 

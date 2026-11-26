@@ -29,7 +29,7 @@ class CharacterExcerptsTest {
 
     @Test
     fun possessivesAndMultiWordNames() {
-        val t = book("Mara's sword shone.", "They called her Rising Dawn.", "A star changing.", "End.")
+        val t = book("Mara's sword shone.", "They called her Rising Dawn.", "A dawn rising.", "End.")
         val end = t.paras[3].firstWord
         assertEquals(listOf("Mara's sword shone."), CharacterExcerpts.pick(t, "Mara", end))
         assertEquals(listOf("They called her Rising Dawn."), CharacterExcerpts.pick(t, "Rising Dawn", end))

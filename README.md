@@ -112,7 +112,7 @@ the transcript instead, and eppy imports it; matching and skipped passages still
 1. **Set up once (Windows):** install [uv](https://docs.astral.sh/uv/) and a current NVIDIA driver, then run `uv sync`
    in `tools/pc-transcribe`. The CUDA libraries come as pip packages; no CUDA Toolkit is needed. The first run
    downloads the Whisper large-v3 model (about 3 GB).
-2. **Transcribe:** `uv run transcribe.py "D:\My audiobookss"` (a folder is searched recursively, or give one audio file).
+2. **Transcribe:** `uv run transcribe.py "D:\My audiobooks"` (a folder is searched recursively, or give one audio file).
    Each audio file gets `<audio name>.transcript.json` next to it; files that already have a newer one are skipped.
    With the book's `.epub` in the same folder, its character names help the spelling. On an RTX 4090 a 57-hour volume
    takes about 37 minutes.

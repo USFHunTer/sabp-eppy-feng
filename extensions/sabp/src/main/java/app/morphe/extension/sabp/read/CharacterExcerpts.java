@@ -65,7 +65,7 @@ public final class CharacterExcerpts {
         return false;
     }
 
-    /** "Mara's" (indexed as "maras") counts as "mara". */
+    /** "Mara's" (indexed as "marass") counts as "mara". */
     private static boolean same(BookText t, int w, String want) {
         String got = t.words[w];
         if (got.equals(want)) return true;

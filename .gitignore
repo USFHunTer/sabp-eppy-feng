@@ -135,3 +135,7 @@ skip-audit*.json
 # Ignore IDEA files
 .idea/
 local.properties
+
+# The issue tracker (specs, tickets) stays on this PC: it describes the user's books, devices and folders,
+# and this repository is public.
+.scratch/

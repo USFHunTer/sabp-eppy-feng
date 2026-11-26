@@ -84,13 +84,13 @@ Read-along logic tests in `ui-tests/src/test/kotlin/.../read/` (JVM, no renderin
   of the audio. The fixture (`ui-tests/src/test/resources/pc-transcribe/`) is real output of `tools/pc-transcribe` on
   the opening of *A Christmas Carol* spoken by Windows' speech synthesizer, with 63 words left out.
 - **LargeTranscriptTest:** a made-up 500k-word, 57-hour transcript: 19.5 MB, cold load 246 ms and +50 MB heap, one
-  full match 3.1 s on the developer's PC. Reports only.
+  full match 3.1 s on a desktop PC. Reports only.
 
 The PC tool has its own self-check without a GPU: `uv run python -m unittest` in `tools/pc-transcribe`.
 
-## Device session 1 (2026-10-24, an Android phone, Android 16 / API 36, SABP 11.7.8 Hooman build, eppy 0.7.0)
+## Device session 1 (2026-10-24, an Android 16 / API 36 phone, SABP 11.7.8 Hooman build, eppy 0.7.0)
 
-Driven by the developer through scrcpy on the user's phone.
+Driven through scrcpy.
 
 | Check | Result |
 |---|---|
@@ -129,7 +129,7 @@ screen need a real player, so they have no snapshots.
 On the phone, with a book that has a paired EPUB and a transcript:
 1. Tapping text doesn't move the audio. Long-press a word: the menu is titled with that word.
 2. Play from here starts at that word; inside a red passage it reads "Play from where the narration continues".
-3. Add to characters on "Changing" in "Mara Rising Dawn" fills in the whole name; saving shows it in Characters
+3. Add to characters on "Rising" in "Mara Rising Dawn" fills in the whole name; saving shows it in Characters
    and in the classic player.
 4. Translate a word and a sentence: Google Translate's popup appears over eppy (or the chooser without it).
 5. Bookmark here: the bookmark has the chapter name and the paragraph's opening words; Undo removes it.
@@ -143,10 +143,10 @@ On the phone, with a book that has a paired EPUB and a transcript:
 
 ## Device checklist: transcripts made on the PC (v0.12.0, not yet on a device)
 
-Verified without a device: the tool on the developer's RTX 4090 (Volume 9 of the test book, 56.9 h, in 37 min;
+Verified without a device: the tool on an RTX 4090 (one volume of a test book, 56.9 h, in 37 min;
 its `dur` equals the container's length to the millisecond), and the import, matching and size tests above.
 
-On the phone, with Volume 9 of the test book:
+On the phone, with a test book's volume:
 1. `Example Saga Volume 9 The Long Road.transcript.json` copied into the book's folder.
 2. Opening the book (EPUB paired; restart eppy if it was already open) shows "Imported transcript for 1 file(s)"
    once, and the Read tab's transcription progress shows 100%. Opening the Read tab again doesn't import again.
