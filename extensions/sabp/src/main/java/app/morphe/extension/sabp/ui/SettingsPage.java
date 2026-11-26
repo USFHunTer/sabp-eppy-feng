@@ -119,6 +119,14 @@ public final class SettingsPage {
         sabp.addView(link(EppyIcon.QUEUE, "Book queue", "Books to play next", EppyBridge.QUEUE_ACTIVITY));
         sabp.addView(link(EppyIcon.CLASSIC, "Classic player", "The original Smart AudioBook Player screen", EppyBridge.PLAYER_ACTIVITY));
 
+        if (app.morphe.extension.sabp.OtherDevicePosition.enabled(c)) {
+            LinearLayout sync = group("Sync between devices");
+            boolean found = SyncPage.installedSyncthing(c) != null;
+            sync.addView(Ui.linkRow(c, t, EppyIcon.SYNC, "Sync between devices",
+                    found ? "Syncthing found · check the other device's position now" : "Syncthing isn't installed yet · set it up here",
+                    v -> host.pushPage(SyncPage.KEY, null)));
+        }
+
         LinearLayout info = group("Book information sources");
         bookInfo(info);
 

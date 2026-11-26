@@ -209,3 +209,10 @@ On two devices with Syncthing-Fork sharing the library folder (README setup) and
 6. A new book folder synced to both devices: SABP's library scan adds it at the other device's position.
 7. A book folder with one EPUB and no pairing: Read along pairs it when the book opens; Remove pairing, reopen the
    book: it stays unpaired.
+
+v0.16.2 additions (not yet on a device):
+8. Settings shows a "Sync between devices" group only with the patch; its summary says whether Syncthing is installed.
+9. The Sync screen shows the saved position of the playing book's folder; **Open Syncthing** opens Syncthing-Fork
+   (or **Get Syncthing-Fork** opens the store when it isn't installed).
+10. **Check the other device** (Sync screen and More menu) shows the offer even after it was let go, and otherwise
+    one of: no saved position yet / this device is up to date / same place / a file this book doesn't have.

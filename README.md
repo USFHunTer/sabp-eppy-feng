@@ -160,6 +160,8 @@ folder-sync app does the syncing. Why it's built this way: [docs/adr/0002](docs/
 **Using it:**
 - Pause before you switch devices: SABP writes the position on every pause (and every 2 minutes while playing).
   A minute on the same Wi-Fi is enough for it to arrive.
+- **Settings → Sync between devices** shows whether Syncthing is installed and what the playing book's folder holds,
+  and opens Syncthing. **Check the other device** (there, or in the player's More menu) looks right away.
 - Open the book on the other device: if that device's position is older, eppy shows *Another device is at 3:12:40,
   2 hours ago* with **Jump**. It never jumps without asking, and each offer appears only once. Playing on instead
   keeps this device's position, which then syncs back.

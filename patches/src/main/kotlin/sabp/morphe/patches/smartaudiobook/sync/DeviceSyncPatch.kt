@@ -8,6 +8,9 @@ import sabp.morphe.patches.smartaudiobook.ui.eppyUiPatch
  * Turns on eppy's offer of the other device's position (docs/adr/0002): eppy reads SABP's own position.sabp.dat in the
  * book folder, which a folder-sync app brings from the other device. eppy itself sends nothing anywhere.
  */
+/** Syncthing-Fork and the original app; the same list as SyncPage.SYNCTHING in the extension. */
+private val SYNCTHING_PACKAGES = listOf("com.github.catfriend1.syncthingandroid", "com.nutomic.syncthingandroid")
+
 @Suppress("unused")
 val deviceSyncPatch = resourcePatch(
     name = "Sync between devices",
@@ -26,6 +29,17 @@ val deviceSyncPatch = resourcePatch(
             el.setAttribute("translatable", "false")
             el.textContent = "on"
             doc.documentElement.appendChild(el)
+        }
+
+        // Android 11+ hides other apps unless listed: lets eppy's sync screen find and open Syncthing.
+        document("AndroidManifest.xml").use { doc ->
+            val queries = doc.getElementsByTagName("queries").item(0)
+                ?: doc.createElement("queries").also {
+                    doc.documentElement.insertBefore(it, doc.getElementsByTagName("application").item(0))
+                }
+            SYNCTHING_PACKAGES.forEach { id ->
+                queries.appendChild(doc.createElement("package").apply { setAttribute("android:name", id) })
+            }
         }
     }
 }

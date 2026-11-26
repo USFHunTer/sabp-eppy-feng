@@ -19,6 +19,8 @@ public final class Pages {
                 return new StatisticsPage(host);
             case CharactersPage.KEY:
                 return new CharactersPage(host);
+            case SyncPage.KEY:
+                return new SyncPage(host);
             default:
                 return null;
         }

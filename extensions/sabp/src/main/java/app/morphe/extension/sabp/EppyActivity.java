@@ -652,18 +652,42 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
     private void checkOtherDevice(EppyBook b) {
         // While this device plays, it is the one writing the position file.
         if (b == null || b.folderUri.equals(otherDeviceChecked) || player.isPlaying() || !OtherDevicePosition.enabled(this)) return;
-        double fp = player.filePositionSeconds();
-        if (fp < 0) return;
+        if (player.filePositionSeconds() < 0) return;
         otherDeviceChecked = b.folderUri;
+        checkOtherDevice(b, false);
+    }
+
+    /** "Check the other device": looks now, offers even an offer already shown, and always says what it found. */
+    @Override
+    public void checkOtherDeviceNow() {
+        EppyBook b = player.book();
+        if (b == null) {
+            Toast.makeText(this, "Start a book first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        checkOtherDevice(b, true);
+    }
+
+    private void checkOtherDevice(EppyBook b, boolean asked) {
         String hereFile = b.currentFile;
+        int hereSec = (int) Math.max(0, player.filePositionSeconds());
         long hereAt = player.lastPlayedMs();
         android.content.SharedPreferences prefs = getSharedPreferences("eppy_sync", MODE_PRIVATE);
         new Thread(() -> {
             OtherDevicePosition there = OtherDevicePosition.read(this, b.folderUri);
-            if (!OtherDevicePosition.worthOffering(hereFile, (int) fp, hereAt, there) || b.file(there.fileName) == null) return;
-            // Each offer is shown once: letting the bar go is the same as dismissing it.
+            int r = OtherDevicePosition.compare(hereFile, hereSec, hereAt, there);
+            String why = r == OtherDevicePosition.NONE ? "No saved position in this book's folder yet. Is Syncthing sharing it?"
+                    : r == OtherDevicePosition.OLDER ? "This device already has the newest position"
+                    : r == OtherDevicePosition.SAME_PLACE ? "Both devices are at the same place"
+                    : b.file(there.fileName) == null ? "The other device is in a file this book doesn't have"
+                    : null;
+            if (why != null) {
+                if (asked) handler.post(() -> showMessage(why, "OK", () -> { }, 6000));
+                return;
+            }
+            // Each offer is shown once by itself: letting the bar go is the same as dismissing it.
             String key = there.fileName + "|" + there.seconds + "|" + there.lastPlayed;
-            if (key.equals(prefs.getString("offered:" + b.folderUri, null))) return;
+            if (!asked && key.equals(prefs.getString("offered:" + b.folderUri, null))) return;
             prefs.edit().putString("offered:" + b.folderUri, key).apply();
             handler.post(() -> showOtherDevice(b, there));
         }, "eppy-sync").start();
@@ -1007,8 +1031,11 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         boolean id3 = BookControls.id3Titles();
         boolean rotate = BookControls.rotateActive(this);
         int[] se = BookControls.skipStartEnd();
-        new Sheet(root, theme, "More")
-                .item(EppyIcon.FILE, "Files", "Every file of this book; tap to play from its start", () -> app.morphe.extension.sabp.ui.ControlsPanels.showFiles(h))
+        Sheet more = new Sheet(root, theme, "More");
+        if (OtherDevicePosition.enabled(this)) {
+            more.item(EppyIcon.SYNC, "Check the other device", "Look for a newer position from your other device now", this::checkOtherDeviceNow);
+        }
+        more.item(EppyIcon.FILE, "Files", "Every file of this book; tap to play from its start", () -> app.morphe.extension.sabp.ui.ControlsPanels.showFiles(h))
                 .item(EppyIcon.SUBTITLES, "Subtitles", "The book's .srt lines; tap one to jump there", () -> app.morphe.extension.sabp.ui.ControlsPanels.showSubtitles(h))
                 .item(EppyIcon.CUT, "Skip start and end", se[0] > 0 || se[1] > 0 ? "Start " + se[0] + " s · end " + se[1] + " s" : "Off",
                         () -> app.morphe.extension.sabp.ui.ControlsPanels.showSkipStartEnd(h, refresh))

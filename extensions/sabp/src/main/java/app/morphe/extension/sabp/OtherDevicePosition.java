@@ -37,13 +37,17 @@ public final class OtherDevicePosition {
         return "on".equals(EppyTheme.configString(c, "eppy_device_sync", "off"));
     }
 
+    /** What the book folder's position says compared with this device: no file, not newer, the same place, or an offer. */
+    public static final int NONE = 0, OLDER = 1, SAME_PLACE = 2, OFFER = 3;
+
     /**
-     * True when the other device's position is worth offering here: it was played later than this device played the
+     * OFFER when the other device's position is worth offering here: it was played later than this device played the
      * book, and it's in another file or more than 30 s away.
      */
-    static boolean worthOffering(String hereFile, int hereSeconds, long hereLastPlayed, OtherDevicePosition there) {
-        if (there == null || there.fileName == null || there.lastPlayed <= hereLastPlayed) return false;
-        return !there.fileName.equals(hereFile) || Math.abs(there.seconds - hereSeconds) > MIN_GAP_SECONDS;
+    public static int compare(String hereFile, int hereSeconds, long hereLastPlayed, OtherDevicePosition there) {
+        if (there == null || there.fileName == null) return NONE;
+        if (there.lastPlayed <= hereLastPlayed) return OLDER;
+        return !there.fileName.equals(hereFile) || Math.abs(there.seconds - hereSeconds) > MIN_GAP_SECONDS ? OFFER : SAME_PLACE;
     }
 
     /** Reads the book folder's position file; null when there is none or it can't be read. Not on the main thread. */

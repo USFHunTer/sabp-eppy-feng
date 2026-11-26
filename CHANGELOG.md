@@ -1,5 +1,14 @@
 # Release notes
 
+## v0.16.2: a sync screen and "Check the other device"
+
+- **Settings → Sync between devices** (with the Sync between devices patch): shows whether Syncthing is installed,
+  the position saved in the playing book's folder and whether it's newer than this device's, the setup steps, and
+  **Open Syncthing** (or **Get Syncthing-Fork** when it isn't installed). Pairing the devices happens in Syncthing.
+- **Check the other device** (on that screen and in the player's More menu) looks for the other device's position
+  right away and offers the jump, even one you already let go. It always says what it found: no saved position yet,
+  this device is up to date, both at the same place, or the other device is in a file this book doesn't have.
+
 ## v0.16.1: read along leaves out picture descriptions
 
 - **Maps and illustrations no longer leave text behind in read along.** Many EPUBs (Gollancz, Orbit, Tor and others)

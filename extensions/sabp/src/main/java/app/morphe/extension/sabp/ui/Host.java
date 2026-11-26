@@ -49,6 +49,10 @@ public interface Host {
     default void closeFullScreenReading() {
     }
 
+    /** Looks for a newer position from the other device now ("Sync between devices" patch) and says what it found. */
+    default void checkOtherDeviceNow() {
+    }
+
     /** Opens the system picker for an EPUB/PDF to pair with the playing book. */
     void pickDocument();
 
