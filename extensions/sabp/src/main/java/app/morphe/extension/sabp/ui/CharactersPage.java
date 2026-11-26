@@ -32,7 +32,7 @@ public final class CharactersPage extends Page {
         load();
     }
 
-    private boolean available() {
+    static boolean available() {
         return EppyBridge.has("charactersLoad") && EppyBridge.has("charactersSave");
     }
 
@@ -51,13 +51,13 @@ public final class CharactersPage extends Page {
         new Thread(() -> {
             List<String[]> loaded = new ArrayList<>();
             try {
-                ArrayList<?> raw = EppyBridge.loadCharacters(c, folder);
-                if (raw != null) for (Object o : raw) loaded.add(new String[]{(String) get(o, "mName"), (String) get(o, "mDescription")});
+                loaded = read(c, folder);
             } catch (Throwable t) {
                 EppyDiag.error("characters", "load failed: " + t);
             }
+            List<String[]> got = loaded;
             main.post(() -> {
-                items = loaded;
+                items = got;
                 show();
             });
         }, "eppy-characters").start();
@@ -102,8 +102,8 @@ public final class CharactersPage extends Page {
     private void edit(int idx) {
         String[] it = idx >= 0 ? items.get(idx) : new String[]{"", ""};
         Sheet sh = new Sheet(host.overlayRoot(), t, idx >= 0 ? "Edit character" : "Add a character");
-        EditText name = field(it[0], "Name", false);
-        EditText desc = field(it[1], "Who they are (your note)", true);
+        EditText name = field(c, t, it[0], "Name", false);
+        EditText desc = field(c, t, it[1], "Who they are (your note)", true);
         sh.content().addView(name);
         sh.content().addView(desc);
         sh.item(EppyIcon.CHECK, "Save", null, () -> {
@@ -119,7 +119,7 @@ public final class CharactersPage extends Page {
         name.requestFocus();
     }
 
-    private EditText field(String value, String hint, boolean multi) {
+    private static EditText field(android.content.Context c, app.morphe.extension.sabp.EppyTheme t, String value, String hint, boolean multi) {
         EditText e = new EditText(c);
         e.setText(value);
         e.setHint(hint);
@@ -130,24 +130,70 @@ public final class CharactersPage extends Page {
         return e;
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private void save(List<String[]> next) {
         items = next;
         show();
         String f = folder;
         new Thread(() -> {
             try {
-                Class<?> cls = Class.forName(EppyBridge.SABP_PACKAGE + ".CharacterDescription");
-                Constructor<?> ctor = cls.getDeclaredConstructor(String.class, String.class);
-                ctor.setAccessible(true);
-                ArrayList raw = new ArrayList();
-                for (String[] it : next) raw.add(ctor.newInstance(it[0], it[1]));
-                EppyBridge.saveCharacters(c, raw, f);
+                write(c, f, next);
             } catch (Throwable t) {
                 EppyDiag.error("characters", "save failed: " + t);
                 main.post(() -> android.widget.Toast.makeText(c, "Couldn't save the characters", android.widget.Toast.LENGTH_SHORT).show());
             }
         }, "eppy-characters-save").start();
+    }
+
+    static List<String[]> read(android.content.Context c, String folder) throws Throwable {
+        List<String[]> out = new ArrayList<>();
+        ArrayList<?> raw = EppyBridge.loadCharacters(c, folder);
+        if (raw != null) for (Object o : raw) out.add(new String[]{(String) get(o, "mName"), (String) get(o, "mDescription")});
+        return out;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static void write(android.content.Context c, String folder, List<String[]> next) throws Throwable {
+        Class<?> cls = Class.forName(EppyBridge.SABP_PACKAGE + ".CharacterDescription");
+        Constructor<?> ctor = cls.getDeclaredConstructor(String.class, String.class);
+        ctor.setAccessible(true);
+        ArrayList raw = new ArrayList();
+        for (String[] it : next) raw.add(ctor.newInstance(it[0], it[1]));
+        EppyBridge.saveCharacters(c, raw, folder);
+    }
+
+    /** "Add to characters" from the Read tab: the editor with the name filled in, saved with the playing book. */
+    static void add(Host host, app.morphe.extension.sabp.EppyTheme t, String name) {
+        EppyBook b = host.player().book();
+        if (b == null) return;
+        android.content.Context c = host.activity();
+        String folder = b.folderUri;
+        Handler main = new Handler(Looper.getMainLooper());
+        Sheet sh = new Sheet(host.overlayRoot(), t, "Add a character");
+        EditText n = field(c, t, name, "Name", false);
+        EditText d = field(c, t, "", "Who they are (your note)", true);
+        sh.content().addView(n);
+        sh.content().addView(d);
+        sh.item(EppyIcon.CHECK, "Save", "Saved with the book; also in the classic player", () -> {
+            String nm = n.getText().toString().trim();
+            String note = d.getText().toString().trim();
+            if (nm.isEmpty()) return;
+            new Thread(() -> {
+                String msg;
+                try {
+                    List<String[]> next = read(c, folder);
+                    next.add(new String[]{nm, note});
+                    write(c, folder, next);
+                    msg = "Added " + nm + " to characters";
+                } catch (Throwable e) {
+                    EppyDiag.error("characters", "add failed: " + e);
+                    msg = "Couldn't save the characters";
+                }
+                String m = msg;
+                main.post(() -> android.widget.Toast.makeText(c, m, android.widget.Toast.LENGTH_SHORT).show());
+            }, "eppy-characters-add").start();
+        });
+        sh.show();
+        n.requestFocus();
     }
 
     private static Object get(Object o, String name) {

@@ -212,7 +212,8 @@ public final class PlayerPane implements EppyBookmarks.Listener {
 
         // Player sheet.
         sheet.setTab(PlayerSheet.TAB_CHAPTERS, new SheetTabs.Chapters(host, t));
-        sheet.setTab(PlayerSheet.TAB_READ, new ReadTab(host, t));
+        readTab = new ReadTab(host, t, false);
+        sheet.setTab(PlayerSheet.TAB_READ, readTab);
         sheet.setTab(PlayerSheet.TAB_BOOKMARKS, new SheetTabs.Bookmarks(host, t));
         sheet.setTab(PlayerSheet.TAB_DETAILS, new SheetTabs.Details(host, t));
         sheet.setTab(PlayerSheet.TAB_UP_NEXT, new SheetTabs.UpNext(host, t));
@@ -295,8 +296,30 @@ public final class PlayerPane implements EppyBookmarks.Listener {
         }
     }
 
+    private ReadTab readTab;
+
+    /** The player's Read tab. */
+    public ReadTab readTab() {
+        return readTab;
+    }
+
+    /** True while the sheet is open on the Read tab. */
+    public boolean readShowing() {
+        return sheet.state() != PlayerSheet.COLLAPSED && sheet.currentTab() == PlayerSheet.TAB_READ;
+    }
+
     private void buildChips() {
         chipRow.removeAllViews();
+        // Read leads the row: tap opens the Read tab, long-press opens full-screen reading.
+        LinearLayout readChip = Ui.accentChip(c, t, EppyIcon.LIBRARY, "Read", v -> sheet.show(PlayerSheet.TAB_READ));
+        readChip.setOnLongClickListener(v -> {
+            Ui.haptic(v, t);
+            if (app.morphe.extension.sabp.read.ReadAlong.get(c).hasDocument()) host.openFullScreenReading();
+            else sheet.show(PlayerSheet.TAB_READ);
+            return true;
+        });
+        readChip.setContentDescription("Read. Double-tap to open the Read tab, double-tap and hold for full-screen reading.");
+        addChip(readChip);
         EppyPlayer pl = host.player();
         lastSpeedLabel = PlaybackPanels.formatSpeed(pl.canSetSpeed() ? pl.bookSpeed() : pl.speed());
         LinearLayout speedChip = Ui.chip(c, t, EppyIcon.SPEED, lastSpeedLabel, false, "0.75×", v -> {
@@ -354,7 +377,6 @@ public final class PlayerPane implements EppyBookmarks.Listener {
         });
         addChip(bookmarkChip);
         addChip(Ui.chip(c, t, EppyIcon.LIST, "Chapters", false, v -> sheet.show(PlayerSheet.TAB_CHAPTERS)));
-        addChip(Ui.chip(c, t, EppyIcon.LIBRARY, "Read", false, v -> sheet.show(PlayerSheet.TAB_READ)));
     }
 
     private void bookmarkOptions() {

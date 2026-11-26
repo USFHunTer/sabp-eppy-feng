@@ -637,6 +637,14 @@ val eppyUiPatch = resourcePatch(
                     application,
                 )
             }
+            // Read tab → Translate hands text to a translator app (PROCESS_TEXT); Android 11+ only
+            // lets the app see those apps when it declares the intent.
+            (doc.getElementsByTagName("queries").item(0) as? Element
+                ?: doc.createElement("queries").also { doc.documentElement.insertBefore(it, application) })
+                .appendChild(doc.createElement("intent").apply {
+                    appendChild(doc.createElement("action").apply { setAttribute("android:name", "android.intent.action.PROCESS_TEXT") })
+                    appendChild(doc.createElement("data").apply { setAttribute("android:mimeType", "text/plain") })
+                })
 
             if (speechMatching == true) {
                 val perms = doc.getElementsByTagName("uses-permission")

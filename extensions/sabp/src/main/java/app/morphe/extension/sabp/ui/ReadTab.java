@@ -32,6 +32,7 @@ import app.morphe.extension.sabp.read.BookText;
 import app.morphe.extension.sabp.read.ModelStore;
 import app.morphe.extension.sabp.read.ReadAlong;
 import app.morphe.extension.sabp.read.Transcriber;
+import app.morphe.extension.sabp.read.Words;
 
 /**
  * Read along: the paired EPUB/PDF follows the narration. The highlight is honest about accuracy:
@@ -61,9 +62,20 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
     private final TranscriptAdapter tAdapter;
     private boolean transcriptMode;
     private long lastTrRebuild, lastProgressAt;
+    private float downX, downY;
+    private final boolean fullScreen;
+    private final View fsButton;
+    private final LinearLayout skipBar;
+    private boolean skipPaused;
+    private final Transcriber.Listener trListener = this::onTranscriberChanged;
+    private final Runnable hideSkip = () -> {
+        if (!skipPaused) hideSkipBar();
+    };
 
-    public ReadTab(Host host, EppyTheme t) {
+    /** fullScreen: the copy shown in full-screen reading (its button leaves full screen). */
+    public ReadTab(Host host, EppyTheme t, boolean fullScreen) {
         this.host = host;
+        this.fullScreen = fullScreen;
         this.c = host.activity();
         this.t = t;
         this.ra = ReadAlong.get(c);
@@ -83,8 +95,23 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
         statusText.setPadding(Ui.dp(c, 8), 0, 0, 0);
         statusText.setMaxLines(2);
         statusBar.addView(statusText, Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        fsButton = Ui.iconButton(c, t, fullScreen ? EppyIcon.FULLSCREEN_EXIT : EppyIcon.FULLSCREEN, t.onSurfaceVariant, 0,
+                fullScreen ? "Leave full screen" : "Full screen", v -> {
+                    if (fullScreen) host.closeFullScreenReading();
+                    else host.openFullScreenReading();
+                });
+        fsButton.setVisibility(fullScreen ? View.VISIBLE : View.GONE);
+        statusBar.addView(fsButton);
         statusBar.addView(Ui.iconButton(c, t, EppyIcon.MORE, t.onSurfaceVariant, 0, "Read along options", v -> options()));
         col.addView(statusBar);
+
+        skipBar = Ui.row(c);
+        skipBar.setPadding(Ui.dp(c, 16), Ui.dp(c, 6), Ui.dp(c, 8), Ui.dp(c, 6));
+        skipBar.setBackground(Ui.rounded(EppyTheme.withAlpha(skipRed(), t.dark ? 0.18f : 0.10f), Ui.dp(c, 16)));
+        skipBar.setVisibility(View.GONE);
+        LinearLayout.LayoutParams sbl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        sbl.setMargins(Ui.dp(c, 12), 0, Ui.dp(c, 12), Ui.dp(c, 6));
+        col.addView(skipBar, sbl);
 
         android.widget.HorizontalScrollView hs = new android.widget.HorizontalScrollView(c);
         hs.setHorizontalScrollBarEnabled(false);
@@ -104,16 +131,19 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
             public void onScroll(AbsListView v, int a, int b, int n) {
             }
         });
-        list.setOnItemClickListener((p, v, pos, id) -> {
-            if (transcriptMode) jumpToTranscript(pos);
-            else jumpToPara(pos);
+        // A tap does nothing (reading shouldn't move the audio); a long-press opens the menu for the word under the finger.
+        list.setOnTouchListener((v, e) -> {
+            if (e.getActionMasked() == android.view.MotionEvent.ACTION_DOWN) {
+                downX = e.getX();
+                downY = e.getY();
+            }
+            return false;
         });
         list.setOnItemLongClickListener((p, v, pos, id) -> {
-            if (transcriptMode) {
-                transcriptSheet(pos);
-                return true;
-            }
-            paraSheet(pos);
+            if (transcriptMode) transcriptSheet(pos);
+            else if (text == null) return false;
+            else if (text.pagesOnly || !(v instanceof TextView)) paraSheet(pos);
+            else wordSheet(pos, wordUnder((TextView) v, pos));
             return true;
         });
         col.addView(list, Ui.lp(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
@@ -136,7 +166,50 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
         bl.bottomMargin = Ui.dp(c, 72);
         root.addView(backToCurrent, bl);
         ra.addListener(this);
-        tr.addListener(this::onTranscriberChanged);
+        tr.addListener(trListener);
+    }
+
+    /** Stops listening for changes (a full-screen copy that's closing). */
+    public void detach() {
+        ra.removeListener(this);
+        tr.removeListener(trListener);
+        root.removeCallbacks(hideSkip);
+    }
+
+    // ---- skipped-passage crossings --------------------------------------------------------------
+
+    /** Playback just ran into a skipped passage: offer to pause for 8 seconds. */
+    public void onSkipCrossed(int[] sk) {
+        if (text == null || transcriptMode) return;
+        skipPaused = false;
+        int n = sk[1] - sk[0] + 1;
+        showSkipBar("Skipped passage · " + n + " words not in the audiobook", EppyIcon.PAUSE, "Pause", v -> {
+            if (host.player().isPlaying()) host.player().playPause();
+            skipPaused = true;
+            root.removeCallbacks(hideSkip);
+            // Show the passage, as if the reader had scrolled there.
+            userScrolledAt = SystemClock.elapsedRealtime();
+            list.setSelectionFromTop(paraOf(sk[0]), Ui.dp(c, 8));
+            showSkipBar("Paused to read the skipped passage", EppyIcon.PLAY, "Play", w -> {
+                if (!host.player().isPlaying()) host.player().playPause();
+                hideSkipBar();
+            });
+        });
+        root.announceForAccessibility("Skipped passage, " + n + " words not in the audiobook");
+        root.removeCallbacks(hideSkip);
+        root.postDelayed(hideSkip, 8000);
+    }
+
+    private void showSkipBar(String msg, int icon, String action, View.OnClickListener click) {
+        skipBar.removeAllViews();
+        skipBar.addView(Ui.text(c, t, msg, 14, 550, t.onSurface), Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        skipBar.addView(Ui.chip(c, t, icon, action, true, click));
+        skipBar.setVisibility(View.VISIBLE);
+    }
+
+    private void hideSkipBar() {
+        skipPaused = false;
+        skipBar.setVisibility(View.GONE);
     }
 
     private void onTranscriberChanged() {
@@ -200,7 +273,8 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
         boolean showText = text != null && s != ReadAlong.State.ERROR;
         list.setVisibility(showText ? View.VISIBLE : View.GONE);
         empty.setVisibility(showText ? View.GONE : View.VISIBLE);
-        statusBar.setVisibility(s == ReadAlong.State.NONE && ra.interruptedNotice() == null ? View.GONE : View.VISIBLE);
+        statusBar.setVisibility(s == ReadAlong.State.NONE && ra.interruptedNotice() == null && !fullScreen ? View.GONE : View.VISIBLE);
+        fsButton.setVisibility(fullScreen || showText ? View.VISIBLE : View.GONE);
         int dot;
         String label;
         double pos = host.player().bookPositionSeconds();
@@ -356,6 +430,8 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
 
     private void rebuildTranscript(EppyBook bk) {
         statusBar.setVisibility(View.VISIBLE);
+        fsButton.setVisibility(fullScreen ? View.VISIBLE : View.GONE);
+        hideSkipBar();
         android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable();
         d.setShape(android.graphics.drawable.GradientDrawable.OVAL);
         Transcriber.State st = tr.state();
@@ -557,6 +633,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
             return;
         }
         if (text == null) return;
+        if (skipPaused && host.player().isPlaying()) hideSkipBar();
         double pos = host.player().bookPositionSeconds();
         if (pos < 0) return;
         int u = ra.unitAt(pos);
@@ -672,13 +749,125 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
     }
 
     private static int extendToPunctuation(String s, int to) {
-        while (to < s.length() && ".,!?;:”’\"')".indexOf(s.charAt(to)) >= 0) to++;
-        return to;
+        return Words.extendToPunctuation(s, to);
     }
 
     private void jumpToPara(int pos) {
         if (text == null) return;
+        playFrom(text.pagesOnly ? pos : text.paras.get(pos).firstWord);
+    }
+
+    /** Document word under the last touch in a paragraph row, or -1. */
+    private int wordUnder(TextView tv, int pos) {
+        int off = tv.getOffsetForPosition(downX - tv.getLeft(), downY - tv.getTop());
+        // markSkipped may put a "Not in the audiobook" label in front of the paragraph's text.
+        off -= tv.getText().length() - text.paras.get(pos).text.length();
+        return Words.at(text, pos, Math.max(0, off));
+    }
+
+    private void wordSheet(int pos, int w) {
+        if (w < 0) {
+            paraSheet(pos);
+            return;
+        }
+        BookText.Para para = text.paras.get(pos);
+        int[] sk = ra.skippedAt(w);
+        String word = Words.display(text, w);
+        Sheet sh = new Sheet(host.overlayRoot(), t, word);
+        sh.item(EppyIcon.PLAY, sk != null ? "Play from where the narration continues" : "Play from here",
+                sk != null || precise() ? null : "Estimated position", () -> playFrom(w));
+        EppyBook bk = host.player() != null ? host.player().book() : null;
+        if (bk != null && CharactersPage.available()) {
+            String name = Words.name(text, w);
+            sh.item(EppyIcon.PERSON, "Add “" + name + "” to characters", null, () -> CharactersPage.add(host, t, name));
+        }
+        sh.item(EppyIcon.TRANSLATE, "Translate “" + word + "”", null, () -> translate(word));
+        sh.item(EppyIcon.TRANSLATE, "Translate sentence", null, () -> translate(Words.sentence(text, w)));
+        if (sk == null && bk != null) sh.item(EppyIcon.BOOKMARK_ADD, "Bookmark here", null, () -> bookmarkHere(pos));
+        sh.item(EppyIcon.COPY, "Copy paragraph", null, () -> {
+            android.content.ClipboardManager cm = (android.content.ClipboardManager) c.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (cm != null) cm.setPrimaryClip(android.content.ClipData.newPlainText("Paragraph", para.text));
+            Toast.makeText(c, "Copied", Toast.LENGTH_SHORT).show();
+        });
+        sh.item(EppyIcon.SHARE, "Share quote", null, () -> {
+            android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_SEND);
+            i.setType("text/plain");
+            long ms = (long) (ra.timeOfUnit(para.firstWord) * 1000);
+            i.putExtra(android.content.Intent.EXTRA_TEXT, para.text + (bk != null && bk.folderName != null ? "\n— " + bk.folderName + ", " + Ui.time(ms) : ""));
+            try {
+                c.startActivity(android.content.Intent.createChooser(i, "Share"));
+            } catch (Throwable ignored) {
+            }
+        });
+        sh.item(EppyIcon.CHECK, "I'm hearing this now", "Corrects the sync to this paragraph", () -> hearingNow(pos));
+        sh.show();
+    }
+
+    /** Hands text to a translator app: Google Translate's popup if installed, else any app that offers it. */
+    private void translate(String s) {
+        android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_PROCESS_TEXT)
+                .setType("text/plain")
+                .putExtra(android.content.Intent.EXTRA_PROCESS_TEXT, s)
+                .putExtra(android.content.Intent.EXTRA_PROCESS_TEXT_READONLY, true);
+        android.content.Intent google = new android.content.Intent(i).setPackage("com.google.android.apps.translate");
+        android.content.pm.PackageManager pm = c.getPackageManager();
+        try {
+            if (!pm.queryIntentActivities(google, 0).isEmpty()) c.startActivity(google);
+            else if (!pm.queryIntentActivities(i, 0).isEmpty()) c.startActivity(android.content.Intent.createChooser(i, "Translate with"));
+            else Toast.makeText(c, "No translator app installed", Toast.LENGTH_SHORT).show();
+        } catch (Throwable e) {
+            Toast.makeText(c, "Couldn't open the translator", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /** A bookmark where this paragraph is narrated: chapter name as the title, its opening words as the note. */
+    private void bookmarkHere(int pos) {
+        EppyBook b = host.player().book();
+        BookText.Para para = text.paras.get(pos);
+        double sec = ra.timeOfUnit(para.firstWord);
+        Object[] loc = b != null ? b.locate((int) Math.round(sec)) : null;
+        if (loc == null) {
+            Toast.makeText(c, "Couldn't bookmark: the book's length isn't known yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String file = (String) loc[0];
+        int at = (Integer) loc[1];
+        app.morphe.extension.sabp.EppyBookmarks bm = app.morphe.extension.sabp.EppyBookmarks.get(c);
+        bm.sync(b.folderUri, false);
+        if (bm.at(b.folderUri, file, at) != null) {
+            Toast.makeText(c, "There's already a bookmark here", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        int ch = b.chapterIndexAt((int) sec, at);
+        EppyBook.BookmarkItem it = new EppyBook.BookmarkItem();
+        it.title = ch >= 0 ? b.chapters.get(ch).title : "";
+        it.description = Words.opening(para.text, 20);
+        it.fileName = file;
+        it.position = at;
+        try {
+            it.raw = EppyBook.newBookmark(it);
+        } catch (Throwable e) {
+            Toast.makeText(c, "Couldn't bookmark", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        java.util.ArrayList<EppyBook.BookmarkItem> next = new java.util.ArrayList<>(bm.items());
+        next.add(it);
+        String folder = b.folderUri;
+        bm.save(folder, next, null);
+        host.showUndo("Bookmark added at " + Ui.time((long) (sec * 1000)), () -> bm.toggle(folder, file, at, null, null));
+    }
+
+    private void hearingNow(int pos) {
         int u = text.pagesOnly ? pos : text.paras.get(pos).firstWord;
+        if (!ra.syncHere(u, host.player().bookPositionSeconds())) {
+            Toast.makeText(c, "Not saved: this conflicts with the book's exact timings.", Toast.LENGTH_SHORT).show();
+        }
+        unit = -1;
+        refresh(false);
+    }
+
+    /** Plays from a word (or page); inside a skipped passage, from where the narration continues. */
+    private void playFrom(int u) {
         int[] sk = text.pagesOnly ? null : ra.skippedAt(u);
         if (sk != null) u = Math.min(text.wordCount() - 1, sk[1] + 1);
         double sec = ra.timeOfUnit(u);
@@ -693,14 +882,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
 
     private void paraSheet(int pos) {
         new Sheet(host.overlayRoot(), t, null)
-                .item(EppyIcon.CHECK, "I'm hearing this now", "Corrects the sync to this " + (text.pagesOnly ? "page" : "paragraph"), () -> {
-                    int u = text.pagesOnly ? pos : text.paras.get(pos).firstWord;
-                    if (!ra.syncHere(u, host.player().bookPositionSeconds())) {
-                        Toast.makeText(c, "Not saved: this conflicts with the book's exact timings.", Toast.LENGTH_SHORT).show();
-                    }
-                    unit = -1;
-                    refresh(false);
-                })
+                .item(EppyIcon.CHECK, "I'm hearing this now", "Corrects the sync to this " + (text.pagesOnly ? "page" : "paragraph"), () -> hearingNow(pos))
                 .item(EppyIcon.PLAY, "Play from here", precise() ? null : "Estimated position", () -> jumpToPara(pos))
                 .show();
     }

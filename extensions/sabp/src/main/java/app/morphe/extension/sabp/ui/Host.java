@@ -37,6 +37,18 @@ public interface Host {
     /** Shows a short message with an Undo action. */
     void showUndo(String message, Runnable undo);
 
+    /** Shows a short message at the bottom with one action (like the Undo bar). */
+    default void showMessage(String message, String action, Runnable run) {
+        showUndo(message, run);
+    }
+
+    /** Full-screen reading: the read-along text over the whole screen with a mini player. */
+    default void openFullScreenReading() {
+    }
+
+    default void closeFullScreenReading() {
+    }
+
     /** Opens the system picker for an EPUB/PDF to pair with the playing book. */
     void pickDocument();
 

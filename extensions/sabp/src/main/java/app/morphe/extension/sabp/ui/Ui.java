@@ -175,6 +175,23 @@ public final class Ui {
         return chip;
     }
 
+    /** A larger chip filled with the accent colour, for the one action a row should lead with. */
+    public static LinearLayout accentChip(Context c, EppyTheme t, int icon, String label, View.OnClickListener click) {
+        LinearLayout chip = chip(c, t, icon, label, false, click);
+        chip.setMinimumHeight(dp(c, 44));
+        chip.setPadding(dp(c, 14), dp(c, 8), dp(c, 20), dp(c, 8));
+        chip.setBackground(ripple(t, rounded(t.primary, dp(c, 22)), dp(c, 22)));
+        ImageView iv = (ImageView) chip.getChildAt(0);
+        iv.setImageDrawable(new EppyIcon(icon, t.onPrimary));
+        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) iv.getLayoutParams();
+        lp.width = lp.height = dp(c, 20);
+        TextView tv = (TextView) chip.getChildAt(1);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        tv.setTypeface(EppyTheme.font(c, 650));
+        tv.setTextColor(t.onPrimary);
+        return chip;
+    }
+
     /** Cover art square with rounded corners and a tinted placeholder when there is no art. */
     public static ImageView cover(Context c, EppyTheme t, Bitmap bmp, float radiusDp) {
         ImageView iv = new ImageView(c);

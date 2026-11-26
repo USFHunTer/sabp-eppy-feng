@@ -131,6 +131,7 @@ class ComponentShots {
             // Chips
             val chips = LinearLayout(ctx).apply { setPadding(Ui.dp(ctx, 16f), Ui.dp(ctx, 8f), 0, Ui.dp(ctx, 8f)) }
             val chipViews = listOf(
+                Ui.accentChip(ctx, t, EppyIcon.LIBRARY, "Read", null),
                 Ui.chip(ctx, t, EppyIcon.BOOKMARK_ADD, "Add bookmark", false, "Remove bookmark", null),
                 Ui.chip(ctx, t, EppyIcon.SPEED, "1.25×", true, null),
                 Ui.chip(ctx, t, EppyIcon.MOON, "Sleep", false, null),

@@ -493,6 +493,18 @@ public final class ReadAlong {
         return out;
     }
 
+    /** The first skipped passage whose first word is narrated between two book times, or null. */
+    public int[] skippedStartingBetween(double from, double to) {
+        if (text == null || skipped.isEmpty()) return null;
+        alignment.setBounds(unitCount(), bookSeconds());
+        int a = alignment.wordAt(from), b = alignment.wordAt(to);
+        for (int[] sk : skipped) {
+            if (sk[0] > b) break;
+            if (sk[0] > a) return sk;
+        }
+        return null;
+    }
+
     public double timeOfUnit(int unit) {
         return alignment.timeOf(unit);
     }
