@@ -1,5 +1,12 @@
 # Release notes
 
+## v0.16.1: read along leaves out picture descriptions
+
+- **Maps and illustrations no longer leave text behind in read along.** Many EPUBs (Gollancz, Orbit, Tor and others)
+  put a written description under each map or picture for screen readers ("Expand / collapse Extended Description").
+  The narrator never reads it, so eppy now leaves it out, and part openings go straight from the title into the
+  story. Books you already paired keep their text until you remove the pairing and pick the document again.
+
 ## v0.16.0: sync between your phone and tablet
 
 - **New separate patch, Sync between devices** (off by default). Keep your library folder the same on both devices

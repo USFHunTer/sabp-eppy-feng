@@ -14,7 +14,7 @@ final class Xhtml {
     static void toParagraphs(String html, BookText out, String docPath, Map<String, int[]> anchors) {
         StringBuilder para = new StringBuilder();
         boolean heading = false;
-        int skipDepth = 0; // inside <script>/<style>/<head>
+        int skipDepth = 0; // inside <script>/<style>/<head>, or <details> (publishers' long image descriptions)
         int i = 0, n = html.length();
         while (i < n) {
             char ch = html.charAt(i);
@@ -31,7 +31,8 @@ final class Xhtml {
                 if (tag.startsWith("!") || tag.startsWith("?")) continue;
                 boolean closing = tag.startsWith("/");
                 String name = tagName(closing ? tag.substring(1) : tag);
-                if (name.equals("script") || name.equals("style") || name.equals("head") || name.equals("title")) {
+                if (name.equals("script") || name.equals("style") || name.equals("head") || name.equals("title")
+                        || name.equals("details")) {
                     if (closing) skipDepth = Math.max(0, skipDepth - 1);
                     else if (!tag.endsWith("/")) skipDepth++;
                     continue;

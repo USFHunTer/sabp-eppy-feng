@@ -73,6 +73,8 @@ checklist (spec section 18), which still hasn't been run by the developer.
 Read-along logic tests in `ui-tests/src/test/kotlin/.../read/` (JVM, no rendering):
 
 - **WholeBookTest:** the remembered whole-book book and the progress label.
+- **XhtmlTest** (v0.16.1): an image's long description in `<details>` (the narrator never reads it) is left out of the
+  EPUB text; the part title after it stays.
 - **SkippedPassageTest:** `TranscriptSync.skipped` around a jump, including a hyphenated word heard as one word and a
   passage narrated in another order (not marked).
 - **SkipAuditTest:** not a regular test (runs only with `EPPY_AUDIT_DIR`): eppy's matching on a real book folder's PC
