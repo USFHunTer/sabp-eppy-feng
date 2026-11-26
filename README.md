@@ -162,6 +162,9 @@ folder-sync app does the syncing. Why it's built this way: [docs/adr/0002](docs/
   A minute on the same Wi-Fi is enough for it to arrive.
 - **Settings → Sync between devices** shows whether Syncthing is installed and what the playing book's folder holds,
   and opens Syncthing. **Check the other device** (there, or in the player's More menu) looks right away.
+- **Paired with** (same screen): paste Syncthing's API key once (Syncthing → ⋮ → Web GUI → Actions → Settings → GUI →
+  API Key) to see which device it's paired with, whether that device is connected, and whether the book's folder is up
+  to date. Syncthing's web GUI must use HTTPS (its default).
 - Open the book on the other device: if that device's position is older, eppy shows *Another device is at 3:12:40,
   2 hours ago* with **Jump**. It never jumps without asking, and each offer appears only once. Playing on instead
   keeps this device's position, which then syncs back.
@@ -180,7 +183,9 @@ folder-sync app does the syncing. Why it's built this way: [docs/adr/0002](docs/
   opens the microphone, but Android may still show its microphone indicator while recognition runs.
 - **Read along never uploads** documents or audio.
 - **Sync between devices** only reads SABP's position file in the book folder; it has no network code. With the
-  Syncthing settings above, your files only move between your own devices on your home network.
+  Syncthing settings above, your files only move between your own devices on your home network. If you give eppy
+  Syncthing's API key, eppy asks Syncthing on the same device (127.0.0.1) and nothing else; the key isn't in settings
+  backups.
 - **Transcribe the whole book** runs as a foreground service with a notification (progress, Stop) and keeps the
   phone awake only while it's transcribing or briefly paused (warm phone, error), never while paused for low battery. That's why the app declares the foreground-service, wake-lock and
   notification permissions. It's only running while you've turned it on for a book.

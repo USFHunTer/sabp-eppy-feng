@@ -20,5 +20,7 @@ SABP 11.7.8 reads `position.sabp.dat` only when a book is new to its library (`B
 - SABP's listening statistics (`!Smart AudioBook Player Statistics/`) are written by both devices, so they're excluded with `.stignore` and stay per device.
 - Reading `position.sabp.dat` depends on SABP's `BookDataBackup` class and its field names (`mFileName`, `mFilePosition`, `mLastPlaybackTime`). A new SABP version is checked for that like every other hook.
 - Transcripts made on a device and the read-along settings stay on that device. Only files in the book folder travel.
-- eppy's Sync screen (v0.16.2) only reports what the book folder holds and whether Syncthing is installed (via the
-  manifest's `<queries>`); pairing, device names and transfer status stay in Syncthing's own app.
+- eppy's Sync screen (v0.16.2) reports what the book folder holds and whether Syncthing is installed (via the
+  manifest's `<queries>`). With an API key the user pastes, it also reads paired devices and folder state from
+  Syncthing's REST API on 127.0.0.1 only, pinning Syncthing's self-signed certificate on first use. Pairing itself
+  stays in Syncthing's app.

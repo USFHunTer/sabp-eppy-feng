@@ -2,7 +2,10 @@ package app.morphe.extension.sabp.ui;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.text.InputType;
 import android.text.format.DateUtils;
+import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -10,6 +13,7 @@ import android.widget.Toast;
 import app.morphe.extension.sabp.EppyBook;
 import app.morphe.extension.sabp.EppyPlayer;
 import app.morphe.extension.sabp.OtherDevicePosition;
+import app.morphe.extension.sabp.SyncthingStatus;
 
 /**
  * Settings → Sync between devices ("Sync between devices" patch). Syncthing pairs the devices and copies the library
@@ -28,6 +32,7 @@ public final class SyncPage extends Page {
     }
 
     private void build() {
+        body.removeAllViews();
         sectionTitle("This book");
         LinearLayout book = card();
         status = note(book, "Looking in the book's folder…");
@@ -58,6 +63,92 @@ public final class SyncPage extends Page {
         } else {
             st.addView(linkRow(EppyIcon.DOWNLOAD, "Get Syncthing-Fork", "Free and open source, from Google Play or F-Droid", v -> openStore()));
         }
+        if (installed != null) pairedWith();
+    }
+
+    // ---- what Syncthing is paired with (its REST API on 127.0.0.1, with the user's API key) --------------------
+
+    private void pairedWith() {
+        sectionTitle("Paired with");
+        LinearLayout box = card();
+        if (SyncthingStatus.key(c).isEmpty()) {
+            note(box, "To see here which device Syncthing is paired with and whether your books are up to date, give eppy "
+                    + "Syncthing's API key. In Syncthing: ⋮ → Web GUI → Actions → Settings → GUI → API Key; copy it and paste it "
+                    + "below. eppy only uses it to ask Syncthing on this device (127.0.0.1); it isn't included in settings backups.");
+            EditText key = new EditText(c);
+            key.setHint("Syncthing API key");
+            key.setSingleLine(true);
+            key.setTextColor(t.onSurface);
+            key.setHintTextColor(t.onSurfaceVariant);
+            key.setBackground(Ui.rounded(t.surfaceContainerHigh, Ui.dp(c, 16)));
+            key.setPadding(Ui.dp(c, 16), 0, Ui.dp(c, 16), 0);
+            key.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            LinearLayout.LayoutParams kl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(c, 52));
+            kl.setMargins(Ui.dp(c, 16), Ui.dp(c, 8), Ui.dp(c, 16), Ui.dp(c, 4));
+            box.addView(key, kl);
+            box.addView(linkRow(EppyIcon.LOCK_OPEN, "Connect", "Ask Syncthing which devices it's paired with", v -> {
+                String k = key.getText().toString().trim();
+                if (k.isEmpty()) {
+                    Toast.makeText(c, "Paste the API key first", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                SyncthingStatus.setKey(c, k);
+                build();
+            }));
+            return;
+        }
+        TextView msg = note(box, "Asking Syncthing…");
+        LinearLayout lines = Ui.column(c);
+        box.addView(lines);
+        box.addView(linkRow(EppyIcon.REFRESH, "Refresh", null, v -> build()));
+        box.addView(linkRow(EppyIcon.LOCK, "Change the API key", "For example after reinstalling Syncthing", v -> {
+            SyncthingStatus.setKey(c, "");
+            build();
+        }));
+        String folderUri = host.player().book() != null ? host.player().book().folderUri : null;
+        new Thread(() -> {
+            SyncthingStatus.Status s = SyncthingStatus.fetch(c);
+            msg.post(() -> show(s, folderUri, msg, lines));
+        }, "eppy-syncthing").start();
+    }
+
+    private void show(SyncthingStatus.Status s, String folderUri, TextView msg, LinearLayout lines) {
+        if (s.error != null) {
+            msg.setText(s.error);
+            return;
+        }
+        StringBuilder b = new StringBuilder();
+        String me = null;
+        int paired = 0;
+        for (SyncthingStatus.Device d : s.devices) {
+            if (d.self) {
+                me = d.name;
+                continue;
+            }
+            paired++;
+            b.append("• ").append(d.name).append(": ").append(d.connected ? "connected now"
+                    : d.lastSeen > 0 ? "last seen " + DateUtils.getRelativeTimeSpanString(d.lastSeen, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+                    : "never connected").append('\n');
+        }
+        msg.setText(paired == 0 ? "This device" + (me != null ? " (" + me + ")" : "") + " isn't paired with any device yet. "
+                + "Open Syncthing and add your other device."
+                : "This device" + (me != null ? " (" + me + ")" : "") + " is paired with:");
+        if (paired > 0) note(lines, b.toString().trim());
+        SyncthingStatus.Folder bookFolder = folderUri != null ? SyncthingStatus.folderOf(s, folderUri) : null;
+        StringBuilder f = new StringBuilder();
+        if (folderUri != null && bookFolder == null) f.append("This book's folder isn't inside any folder Syncthing shares.\n");
+        for (SyncthingStatus.Folder x : s.folders) {
+            f.append(x == bookFolder ? "This book is in " : "Folder ").append('"').append(x.label).append("\": ")
+                    .append(SyncthingStatus.folderState(x));
+            if (x.devices.isEmpty()) f.append(" · not shared with any device");
+            else {
+                f.append(" · shared with ");
+                for (int i = 0; i < x.devices.size(); i++) f.append(i > 0 ? ", " : "").append(s.deviceName(x.devices.get(i)));
+            }
+            f.append('\n');
+        }
+        if (s.folders.isEmpty()) f.append("Syncthing shares no folders yet. Share your audiobooks folder with the other device.");
+        note(lines, f.toString().trim());
     }
 
     /** The installed Syncthing app's package, or null. */

@@ -216,3 +216,6 @@ v0.16.2 additions (not yet on a device):
    (or **Get Syncthing-Fork** opens the store when it isn't installed).
 10. **Check the other device** (Sync screen and More menu) shows the offer even after it was let go, and otherwise
     one of: no saved position yet / this device is up to date / same place / a file this book doesn't have.
+11. Paste Syncthing's API key on the Sync screen → Connect: "Paired with" lists the other device (connected now / last
+    seen), and the folder holding the playing book with its state and who it's shared with. A wrong key says Syncthing
+    refused it; Syncthing stopped says it isn't running; Refresh updates it.

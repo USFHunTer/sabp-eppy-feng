@@ -8,6 +8,10 @@
 - **Check the other device** (on that screen and in the player's More menu) looks for the other device's position
   right away and offers the jump, even one you already let go. It always says what it found: no saved position yet,
   this device is up to date, both at the same place, or the other device is in a file this book doesn't have.
+- **Paired with:** paste Syncthing's API key once on the Sync screen and it shows which devices Syncthing is paired
+  with (connected now, or when last seen), which shared folder holds the playing book, whether it's up to date, and
+  who it's shared with. eppy asks only Syncthing on the same device (127.0.0.1), pins Syncthing's certificate the first
+  time, and keeps the key out of settings backups.
 
 ## v0.16.1: read along leaves out picture descriptions
 
