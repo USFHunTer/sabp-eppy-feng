@@ -22,3 +22,10 @@ _Avoid_: missing text, missing part.
 
 **Transcribe whole book**: keep transcribing one book until its transcription progress reaches 100%, regardless of where the listener is, instead of staying a few minutes ahead. It belongs to one book, keeps going in the background, and waits while another book is loaded.
 _Avoid_: force read, read all the file.
+
+**Skipped-passage crossing**: the moment normal playback reaches a skipped passage and the narration carries on after it. Seeking or jumping over a skipped passage is not a crossing.
+
+**Full-screen reading**: the read-along text over the whole screen, with a mini player at the bottom, opened from the Read tab or the Read chip. The Read tab in the player stays as it is.
+_Avoid_: reading mode, full-screen player.
+
+**Read chip**: the first chip in the row under the player controls; opens the Read tab.
