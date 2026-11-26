@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "0.15.3",
+  "version": "0.16.0",
   "patches": [
     {
       "name": "Block Google billing logging",
@@ -84,6 +84,33 @@
       "name": "Modern font",
       "description": "Uses the rounded geometric Outfit font across the classic SABP screens (lists, settings, toolbars), keeping each label's weight. eppy always uses it.",
       "default": true,
+      "dependencies": [
+        "ResourcePatch"
+      ],
+      "compatiblePackages": [
+        {
+          "packageName": "ak.alizandro.smartaudiobookplayer",
+          "name": "Smart AudioBook Player",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": "#33B5E5",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "11.7.8",
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Sync between devices",
+      "description": "For a library folder kept the same on two devices by a folder-sync app such as Syncthing. When you open a book that the other device played further, eppy offers to jump there. Bookmarks and character notes already travel with the book folder. eppy itself sends nothing anywhere; see the README for setup.",
+      "default": false,
       "dependencies": [
         "ResourcePatch"
       ],
