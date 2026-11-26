@@ -443,6 +443,11 @@ public final class PlayerPane implements EppyBookmarks.Listener {
     }
 
     /** Back press: close the sheet first. */
+    /** Folds the sheet away so the player shows. */
+    public void collapseSheet() {
+        sheet.collapse();
+    }
+
     public boolean onBack() {
         if (lockOverlay != null) return true;
         return sheet.onBack();

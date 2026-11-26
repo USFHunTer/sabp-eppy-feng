@@ -1247,6 +1247,8 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         fsMini.root.setOnClickListener(v -> {
             closeFullScreenReading();
             openPlayer();
+            PlayerPane p = overlayPane != null ? overlayPane : sidePane;
+            if (p != null) p.collapseSheet();
         });
         LinearLayout.LayoutParams ml = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 64));
         ml.setMargins(Ui.dp(this, 12), Ui.dp(this, 4), Ui.dp(this, 12), Ui.dp(this, 12));

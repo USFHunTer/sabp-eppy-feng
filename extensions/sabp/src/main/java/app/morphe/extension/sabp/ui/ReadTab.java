@@ -615,7 +615,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
             updateTRow(tAdapter.curPara);
         }
         if (paraChanged && SystemClock.elapsedRealtime() - userScrolledAt >= 8000 && tAdapter.curPara >= 0) {
-            if (t.reduceMotion) list.setSelectionFromTop(tAdapter.curPara, list.getHeight() / 4);
+            if (t.reduceMotion || old < 0) list.setSelectionFromTop(tAdapter.curPara, list.getHeight() / 4);
             else list.smoothScrollToPositionFromTop(tAdapter.curPara, list.getHeight() / 4, 300);
         }
         int cp = tAdapter.curPara;
@@ -654,7 +654,10 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
             int newPara = paraOf(u);
             updateRow(oldPara);
             updateRow(newPara);
-            if (oldPara != newPara) follow(false);
+            // The first placement (just opened, full screen, back from the background) jumps there:
+            // scrolling smoothly from the top of the book would take seconds.
+            if (oldPara < 0) follow(false, true);
+            else if (oldPara != newPara) follow(false);
         }
         boolean away = SystemClock.elapsedRealtime() - userScrolledAt < 8000 && !isVisible(paraOf(unit));
         backToCurrent.setVisibility(away ? View.VISIBLE : View.GONE);
@@ -670,6 +673,10 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
     }
 
     private void follow(boolean force) {
+        follow(force, false);
+    }
+
+    private void follow(boolean force, boolean jump) {
         if (transcriptMode) {
             if (tAdapter.curPara >= 0) list.setSelectionFromTop(tAdapter.curPara, list.getHeight() / 4);
             return;
@@ -677,7 +684,8 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
         if (text == null || unit < 0) return;
         if (!force && SystemClock.elapsedRealtime() - userScrolledAt < 8000) return;
         int para = paraOf(unit);
-        if (t.reduceMotion || force) list.setSelectionFromTop(para, list.getHeight() / 4);
+        int top = list.getHeight() > 0 ? list.getHeight() / 4 : Ui.dp(c, 120);
+        if (t.reduceMotion || force || jump) list.setSelectionFromTop(para, top);
         else list.smoothScrollToPositionFromTop(para, list.getHeight() / 4, 300);
     }
 

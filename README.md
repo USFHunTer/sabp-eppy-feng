@@ -91,7 +91,7 @@ Pair an EPUB or PDF with an audiobook (player sheet → **Read along** → *Choo
 - **Read chip:** the first chip under the player controls. Tap opens the Read tab; long-press opens full-screen reading.
 - **Full-screen reading:** the ⛶ button in the Read tab (or long-press the Read chip) shows the text over the whole
   screen with a mini player at the bottom (rewind, play/pause, forward). The screen stays on and the system bars hide
-  until you swipe from the edge. Tap the mini player for the full player; Back or the button leaves full screen.
+  until you swipe from the edge. Tap the mini player for the player (the sheet folds away); Back or the button leaves full screen.
 - **Exact sync:** EPUBs with EPUB 3 Media Overlays (e.g. [Storyteller](https://gitlab.com/storyteller-platform/storyteller) "readaloud" books) use their own timings.
 - **No guessed jumps:** a phrase found in more than one place, or a low-confidence match, is rejected, and the status says so.
 

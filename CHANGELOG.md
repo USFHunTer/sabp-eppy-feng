@@ -1,5 +1,12 @@
 # Release notes
 
+## v0.13.1: Read tab opens at your place
+
+- **No more scrolling from the top:** full-screen reading, and the Read tab after coming back to eppy, open right at
+  the paragraph being read instead of scrolling there from the start of the book.
+- **Mini player in full screen goes to the player:** tapping it leaves full screen and shows the player itself, with
+  the sheet folded away, instead of the Read tab.
+
 ## v0.13.0: reading without losing your place
 
 - **Tapping the text no longer moves the audio.** Long-press a word instead for a menu: Play from here (from that
