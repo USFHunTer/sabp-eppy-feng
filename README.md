@@ -165,7 +165,8 @@ folder-sync app does the syncing. Why it's built this way: [docs/adr/0002](docs/
 - **Paired with** (same screen): paste Syncthing's API key once (Syncthing → ⋮ → Web GUI → Actions → Settings → GUI →
   API Key) to see which device it's paired with, whether that device is connected, and whether the book's folder is up
   to date. Syncthing's web GUI must use HTTPS (its default).
-- Open the book on the other device: if that device's position is older, eppy shows *Another device is at 3:12:40,
+- Open the book on the other device: if the book's folder holds the other device's position and it's more than
+  30 seconds from where you are, eppy shows *Another device is at 3:12:40,
   2 hours ago* with **Jump**. It never jumps without asking, and each offer appears only once. Playing on instead
   keeps this device's position, which then syncs back.
 - A book that's new to SABP (copied to the PC's folder, synced to both) starts where the other device left it, because

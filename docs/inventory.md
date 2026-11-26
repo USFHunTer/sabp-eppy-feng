@@ -25,7 +25,7 @@ Device verification: none of this has been checked on a device by the developer 
 | Bookmarks | `bookmarks.sabp.xml` in the book folder | XML | `bookmarksLoad` / `bookmarksSave` hooks (SABP's own reader/writer) |
 | Characters | `characters.sabp.xml` in the book folder | XML `<root><character><name/><description/></character>` | `charactersLoad` / `charactersSave` hooks |
 | Position history (undo jumps) | transient `ArrayList` of `BookHistoryNode` (action, file, position) on `BookData`: in memory only, cleared when the app restarts | memory | the book's only transient `ArrayList` field (by type) |
-| Last played time | `BookData.mLastPlaybackTime` | epoch ms | `BookData` field by name |
+| Last played time | `BookData.mLastPlaybackTime`: set to now by `BookData.P0()` when a book is switched to (`PlayerService.z0`) and while it plays (`j5`) | epoch ms | `BookData` field by name |
 | Listening statistics | `!Smart AudioBook Player Statistics/statistics.xml` under the library root | XML | read directly (round F) |
 | Cover | `EmbeddedCover.jpg` / chosen image in the book folder, cached by SABP | image | `covers` + `coverLoader` hooks |
 | Chapters | `MetadataHolder.mFileInfo[].mChapters` (from file tags, M4B atoms, cue files) | serialization | `BookData` fields by name |

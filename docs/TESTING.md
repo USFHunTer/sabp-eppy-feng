@@ -219,3 +219,8 @@ v0.16.2 additions (not yet on a device):
 11. Paste Syncthing's API key on the Sync screen → Connect: "Paired with" lists the other device (connected now / last
     seen), and the folder holding the playing book with its state and who it's shared with. A wrong key says Syncthing
     refused it; Syncthing stopped says it isn't running; Refresh updates it.
+
+v0.16.3 (fix, not yet on a device): the offer never appeared in v0.16.0–v0.16.2 because SABP stamps a book as played
+"now" when it's opened (`BookData.P0`, found in `classes.dex`). After re-patching both devices: play and pause on one
+device; open the book (or More → Check the other device) on the other: the offer appears, also while it plays. Note:
+the first save on each device after updating is what teaches eppy which file is its own.

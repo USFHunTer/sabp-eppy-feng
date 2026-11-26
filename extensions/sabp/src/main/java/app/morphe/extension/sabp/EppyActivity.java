@@ -650,8 +650,8 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
 
     /** Once per book per visit: offers the position another device left in the book folder (docs/adr/0002). */
     private void checkOtherDevice(EppyBook b) {
-        // While this device plays, it is the one writing the position file.
-        if (b == null || b.folderUri.equals(otherDeviceChecked) || player.isPlaying() || !OtherDevicePosition.enabled(this)) return;
+        // Also while playing: opening a book in eppy starts it, and the offer matters most right then.
+        if (b == null || b.folderUri.equals(otherDeviceChecked) || !OtherDevicePosition.enabled(this)) return;
         if (player.filePositionSeconds() < 0) return;
         otherDeviceChecked = b.folderUri;
         checkOtherDevice(b, false);
@@ -671,13 +671,12 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
     private void checkOtherDevice(EppyBook b, boolean asked) {
         String hereFile = b.currentFile;
         int hereSec = (int) Math.max(0, player.filePositionSeconds());
-        long hereAt = player.lastPlayedMs();
         android.content.SharedPreferences prefs = getSharedPreferences("eppy_sync", MODE_PRIVATE);
         new Thread(() -> {
             OtherDevicePosition there = OtherDevicePosition.read(this, b.folderUri);
-            int r = OtherDevicePosition.compare(hereFile, hereSec, hereAt, there);
+            int r = OtherDevicePosition.compare(hereFile, hereSec, OtherDevicePosition.savedHere(this, b.folderUri), there);
             String why = r == OtherDevicePosition.NONE ? "No saved position in this book's folder yet. Is Syncthing sharing it?"
-                    : r == OtherDevicePosition.OLDER ? "This device already has the newest position"
+                    : r == OtherDevicePosition.MINE ? "The saved position is this device's own: nothing newer from the other device"
                     : r == OtherDevicePosition.SAME_PLACE ? "Both devices are at the same place"
                     : b.file(there.fileName) == null ? "The other device is in a file this book doesn't have"
                     : null;
@@ -701,7 +700,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         String ago = android.text.format.DateUtils.getRelativeTimeSpanString(there.lastPlayed, System.currentTimeMillis(),
                 android.text.format.DateUtils.MINUTE_IN_MILLIS).toString();
         showMessage("Another device is at " + Ui.time(at * 1000) + ", " + ago, "Jump",
-                () -> player.jumpTo(there.fileName, there.seconds, false), 15000);
+                () -> player.jumpTo(there.fileName, there.seconds, player.isPlaying()), 15000);
     }
 
     private static final int REQ_DOC = 4711;

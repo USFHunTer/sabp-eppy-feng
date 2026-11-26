@@ -1,5 +1,13 @@
 # Release notes
 
+## v0.16.3: the other device's position now shows up
+
+- **Fixed: the offer never appeared.** SABP marks a book as "played now" the moment it's opened, so eppy always
+  thought this device had the newest position, and opening a book in eppy also starts it, which skipped the check.
+  eppy now records each position SABP saves on this device (a small hook in the Sync between devices patch), so any
+  other position in the book's folder is the other device's, whatever the two devices' clocks say. The check also
+  runs while the book is playing, and Jump keeps it playing.
+
 ## v0.16.2: a sync screen and "Check the other device"
 
 - **Settings → Sync between devices** (with the Sync between devices patch): shows whether Syncthing is installed,

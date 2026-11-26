@@ -177,8 +177,8 @@ public final class SyncPage extends Page {
             status.setText("Start a book to see what its folder holds.");
             return;
         }
-        long hereAt = p.lastPlayedMs();
         String folder = b.folderUri;
+        Long savedHere = OtherDevicePosition.savedHere(c, folder);
         new Thread(() -> {
             OtherDevicePosition there = OtherDevicePosition.read(c, folder);
             String s;
@@ -188,8 +188,9 @@ public final class SyncPage extends Page {
                 EppyBook.FileItem f = b.file(there.fileName);
                 long at = (f != null && f.start >= 0 ? f.start : 0) + there.seconds;
                 String when = DateUtils.getRelativeTimeSpanString(there.lastPlayed, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString();
+                boolean mine = savedHere != null && savedHere == there.lastPlayed;
                 s = "Saved position in the book's folder: " + Ui.time(at * 1000) + ", " + when
-                        + (there.lastPlayed > hereAt ? ". Newer than this device's: check the other device to jump." : ". This device is up to date.");
+                        + (mine ? ", saved by this device." : savedHere == null ? "." : ", from the other device: check the other device to jump there.");
             }
             status.post(() -> status.setText(s));
         }, "eppy-sync").start();

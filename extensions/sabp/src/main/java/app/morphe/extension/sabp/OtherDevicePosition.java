@@ -37,17 +37,38 @@ public final class OtherDevicePosition {
         return "on".equals(EppyTheme.configString(c, "eppy_device_sync", "off"));
     }
 
-    /** What the book folder's position says compared with this device: no file, not newer, the same place, or an offer. */
-    public static final int NONE = 0, OLDER = 1, SAME_PLACE = 2, OFFER = 3;
+    /** What the book folder's position says compared with this device: no file, written here, the same place, or an offer. */
+    public static final int NONE = 0, MINE = 1, SAME_PLACE = 2, OFFER = 3;
 
     /**
-     * OFFER when the other device's position is worth offering here: it was played later than this device played the
-     * book, and it's in another file or more than 30 s away.
+     * OFFER when the book folder's position was written by the other device and is in another file or more than 30 s
+     * from here. Who wrote it is told by its last-played stamp: this device's saves are recorded by {@link #onSaved}.
+     * (Comparing with this device's last-played time doesn't work: SABP stamps it with "now" as soon as a book is
+     * opened.) With no save recorded yet, only the place decides.
      */
-    public static int compare(String hereFile, int hereSeconds, long hereLastPlayed, OtherDevicePosition there) {
+    public static int compare(String hereFile, int hereSeconds, Long savedHere, OtherDevicePosition there) {
         if (there == null || there.fileName == null) return NONE;
-        if (there.lastPlayed <= hereLastPlayed) return OLDER;
+        if (savedHere != null && there.lastPlayed == savedHere) return MINE;
         return !there.fileName.equals(hereFile) || Math.abs(there.seconds - hereSeconds) > MIN_GAP_SECONDS ? OFFER : SAME_PLACE;
+    }
+
+    private static android.content.SharedPreferences prefs(Context c) {
+        return c.getSharedPreferences("eppy_sync", Context.MODE_PRIVATE);
+    }
+
+    /** The last-played stamp of this device's last save of the book's position file, or null. */
+    public static Long savedHere(Context c, String folderUri) {
+        android.content.SharedPreferences p = prefs(c);
+        return p.contains("saved:" + folderUri) ? p.getLong("saved:" + folderUri, 0) : null;
+    }
+
+    /** Hook (Sync between devices patch): SABP is about to write position.sabp.dat for this BookData. */
+    public static void onSaved(Context c, Object bookData) {
+        try {
+            Object folder = field(bookData, "mFolderUri"), at = field(bookData, "mLastPlaybackTime");
+            if (folder instanceof String && at instanceof Long) prefs(c).edit().putLong("saved:" + folder, (Long) at).apply();
+        } catch (Throwable ignored) {
+        }
     }
 
     /** Reads the book folder's position file; null when there is none or it can't be read. Not on the main thread. */

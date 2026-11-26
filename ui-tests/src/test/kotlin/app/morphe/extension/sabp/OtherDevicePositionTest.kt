@@ -45,15 +45,17 @@ class OtherDevicePositionTest {
     }
 
     @Test
-    fun offersOnlyNewerAndElsewhere() {
-        val here = 1_000L
-        fun cmp(t: OtherDevicePosition?) = OtherDevicePosition.compare("a.mp3", 100, here, t)
-        assertEquals("older", OtherDevicePosition.OLDER, cmp(there("a.mp3", 900, here - 1)))
-        assertEquals("same time: this device wrote it", OtherDevicePosition.OLDER, cmp(there("a.mp3", 900, here)))
-        assertEquals("within 30 s", OtherDevicePosition.SAME_PLACE, cmp(there("a.mp3", 130, here + 1)))
-        assertEquals("31 s on", OtherDevicePosition.OFFER, cmp(there("a.mp3", 131, here + 1)))
-        assertEquals("31 s back", OtherDevicePosition.OFFER, cmp(there("a.mp3", 69, here + 1)))
-        assertEquals("another file", OtherDevicePosition.OFFER, cmp(there("b.mp3", 100, here + 1)))
+    fun offersOnlyTheOtherDevicesPositionElsewhere() {
+        val saved = 1_000L // this device's last save of the file
+        fun cmp(t: OtherDevicePosition?, savedHere: Long? = saved) = OtherDevicePosition.compare("a.mp3", 100, savedHere, t)
+        assertEquals("written here", OtherDevicePosition.MINE, cmp(there("a.mp3", 900, saved)))
+        assertEquals("within 30 s", OtherDevicePosition.SAME_PLACE, cmp(there("a.mp3", 130, 2_000)))
+        assertEquals("31 s on", OtherDevicePosition.OFFER, cmp(there("a.mp3", 131, 2_000)))
+        assertEquals("31 s back", OtherDevicePosition.OFFER, cmp(there("a.mp3", 69, 2_000)))
+        assertEquals("another file", OtherDevicePosition.OFFER, cmp(there("b.mp3", 100, 2_000)))
+        // The other device's clock may be behind: who wrote it decides, not which stamp is bigger.
+        assertEquals("other device, earlier clock", OtherDevicePosition.OFFER, cmp(there("a.mp3", 900, 500)))
+        assertEquals("no save recorded yet: the place decides", OtherDevicePosition.OFFER, cmp(there("a.mp3", 900, 500), null))
         assertEquals("no file", OtherDevicePosition.NONE, cmp(null))
     }
 }

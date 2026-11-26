@@ -381,13 +381,6 @@ public final class EppyPlayer {
         return v instanceof String ? (String) v : null;
     }
 
-    /** When this device last played the current book (SABP's BookData.mLastPlaybackTime, epoch ms), or 0. */
-    public long lastPlayedMs() {
-        Object bookData = currentBookData();
-        Object v = bookData != null ? field(bookData, "mLastPlaybackTime") : null;
-        return v instanceof Long ? (Long) v : 0;
-    }
-
     private Object currentBookData() {
         Service service = EppyBridge.getPlayerService();
         if (service == null) return null;
