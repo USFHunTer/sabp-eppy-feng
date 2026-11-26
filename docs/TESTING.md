@@ -104,6 +104,16 @@ Driven through scrcpy.
 | Seek bar on a 33 h single-file book | **fail** → fixed in 0.8.1 (now per chapter) |
 
 
+## Device checklist: Block Google billing logging (v0.15.0, not yet on a device)
+
+Verified without a device: SABP 11.7.8's APK has one `backend:` entry for Google's data transport (CCT), used by the
+Play billing library (log source `PLAY_BILLING_LIBRARY`); no analytics, ads or crash-reporting libraries.
+
+On the tablet, with the patch applied:
+1. SABP and eppy start and play normally; Settings → About / full-version state unchanged.
+2. Optional, with a computer: `adb shell dumpsys package ak.alizandro.smartaudiobookplayer` still lists the transport
+   service, and `adb logcat | grep -i TRuntime` shows events being dropped ("Unknown backend"), not uploaded.
+
 ## Device checklist: AI character notes (v0.14.0, not yet on a device)
 
 Verified without a device: `CharacterExcerptsTest` (only paragraphs before the listening position, first 4 + latest 8,

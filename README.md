@@ -42,6 +42,13 @@ Recolours and rounds the **classic** SABP screens (wallpaper or custom accent, t
 ### Modern font
 
 Uses the Outfit font across the classic SABP screens.
+
+### Block Google billing logging
+
+A separate patch. SABP 11.7.8 has no analytics, ads or crash reporters (checked in its APK); the one report it sends
+Google comes from the Google Play billing library (usage events about billing, through Google's data transport). This
+patch removes that transport's upload channel from SABP's manifest, so the events are deleted on the device instead of
+sent. Purchases and the full-version check are untouched.
 <!-- PATCHES_END -->
 
 ## Player interface: one switch

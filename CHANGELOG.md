@@ -1,5 +1,12 @@
 # Release notes
 
+## v0.15.0: block Google billing logging
+
+- **New separate patch, Block Google billing logging:** the Google Play billing library inside SABP no longer sends
+  usage reports to Google. A scan of SABP 11.7.8 found no analytics, ads or crash reporters; this was the only report.
+- **Nothing personal in the public repository:** tests and docs use invented book and character names, and the issue
+  tracker stays on the developer's PC.
+
 ## v0.14.1: book lookups don't identify you
 
 - **Open Library lookups** name eppy with a generic app name instead of the GitHub repository's address.
