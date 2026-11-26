@@ -1,7 +1,32 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "patches": [
+    {
+      "name": "Block Google billing logging",
+      "description": "Stops the Google Play billing library inside SABP from sending usage reports to Google. Purchases and the full-version check keep working. SABP has no other analytics, ads or crash reporters.",
+      "default": true,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "ak.alizandro.smartaudiobookplayer",
+          "name": "Smart AudioBook Player",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": "#33B5E5",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "11.7.8",
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
     {
       "name": "Material You theme",
       "description": "Replaces the old Holo-blue accent with your wallpaper colours (Android 12+) or a colour you choose, tints the dark and light backgrounds to match, and rounds dialogs, sheets, cards and progress bars the way Material 3 does. The in-app Light, Dark and Black theme choice keeps working.",
