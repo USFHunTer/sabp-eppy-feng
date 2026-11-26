@@ -8,7 +8,7 @@ setup-matt-pocock-skills = true
 
 ### Issue tracker
 
-Issues and specs live as local markdown under `.scratch/`. See `docs/agents/issue-tracker.md`.
+Issues and specs live as local markdown under `.scratch/`, which is git-ignored (the repository is public). See `docs/agents/issue-tracker.md`.
 
 ### Domain docs
 

@@ -1,6 +1,8 @@
 # Issue tracker: Local Markdown
 
-Issues and specs for this repo live as markdown files in `.scratch/`.
+Issues and specs for this repo live as markdown files in `.scratch/`. That folder is **not committed** (it's in
+`.gitignore`): the repository is public and the tickets describe the user's books, devices and folders. Keep anything
+personal out of committed files too: use invented book and character names in tests and docs.
 
 ## Conventions
 
