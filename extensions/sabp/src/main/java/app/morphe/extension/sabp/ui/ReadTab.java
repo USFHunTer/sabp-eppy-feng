@@ -187,9 +187,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
             if (host.player().isPlaying()) host.player().playPause();
             skipPaused = true;
             root.removeCallbacks(hideSkip);
-            // Show the passage, as if the reader had scrolled there.
-            userScrolledAt = SystemClock.elapsedRealtime();
-            list.setSelectionFromTop(paraOf(sk[0]), Ui.dp(c, 8));
+            scrollToPassage(sk);
             showSkipBar("Paused to read the skipped passage", EppyIcon.PLAY, "Play", w -> {
                 if (!host.player().isPlaying()) host.player().playPause();
                 hideSkipBar();
@@ -198,6 +196,18 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
         root.announceForAccessibility("Skipped passage, " + n + " words not in the audiobook");
         root.removeCallbacks(hideSkip);
         root.postDelayed(hideSkip, 8000);
+    }
+
+    /** Scrolls to the start of a skipped passage (the notice's Read action). */
+    public void showPassage(int[] sk) {
+        root.post(() -> scrollToPassage(sk));
+    }
+
+    /** Shows the passage, as if the reader had scrolled there. */
+    private void scrollToPassage(int[] sk) {
+        if (text == null || transcriptMode) return;
+        userScrolledAt = SystemClock.elapsedRealtime();
+        list.setSelectionFromTop(paraOf(sk[0]), Ui.dp(c, 8));
     }
 
     private void showSkipBar(String msg, int icon, String action, View.OnClickListener click) {

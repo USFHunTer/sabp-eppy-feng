@@ -104,6 +104,27 @@ Driven by the developer through scrcpy on the user's phone.
 | Seek bar on a 33 h single-file book | **fail** → fixed in 0.8.1 (now per chapter) |
 
 
+## Device checklist: Read tab actions and full-screen reading (v0.13.0, not yet on a device)
+
+Verified without a device: `WordsTest` (word under the finger, names, sentences), `SkipWatcherTest` (only normal
+playback across a passage counts), and the Read chip in ComponentShots. The Read tab, the skipped-passage bar and full
+screen need a real player, so they have no snapshots.
+
+On the phone, with a book that has a paired EPUB and a transcript:
+1. Tapping text doesn't move the audio. Long-press a word: the menu is titled with that word.
+2. Play from here starts at that word; inside a red passage it reads "Play from where the narration continues".
+3. Add to characters on "Changing" in "Mara Rising Dawn" fills in the whole name; saving shows it in Characters
+   and in the classic player.
+4. Translate a word and a sentence: Google Translate's popup appears over eppy (or the chooser without it).
+5. Bookmark here: the bookmark has the chapter name and the paragraph's opening words; Undo removes it.
+6. The Read chip is first and filled; long-press opens full-screen reading.
+7. Full screen: system bars hidden, screen stays on, mini player works (rewind, play/pause, forward); tap on it shows
+   the player; Back leaves full screen.
+8. Let playback run into a skipped passage on the Read tab: the bar with Pause shows for 8 s. Pause scrolls to the
+   passage; Play continues. Starting playback from the mini player hides the Play bar.
+9. Same in full screen. On the home screen: the notice with Read, which opens the passage.
+10. Seek over a skipped passage: no bar, no notice.
+
 ## Device checklist: transcripts made on the PC (v0.12.0, not yet on a device)
 
 Verified without a device: the tool on the developer's RTX 4090 (Volume 9 of the test book, 56.9 h, in 37 min;

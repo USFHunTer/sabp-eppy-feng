@@ -1,5 +1,17 @@
 # Release notes
 
+## v0.13.0: reading without losing your place
+
+- **Tapping the text no longer moves the audio.** Long-press a word instead for a menu: Play from here (from that
+  word), Add to characters (name filled in, e.g. "Mara Rising Dawn"), Translate the word or the sentence (Google
+  Translate's popup, or another translator app), Bookmark here, Copy paragraph, Share quote, and I'm hearing this now.
+- **Read chip first:** the Read chip leads the row under the player controls, larger and in the accent colour.
+  Long-press it for full-screen reading.
+- **Full-screen reading:** the text over the whole screen with a mini player (rewind, play/pause, forward). The screen
+  stays on; Back leaves it.
+- **Skipped passages while listening:** reaching one shows a bar with Pause for 8 seconds (then a Play button to carry
+  on after reading it); elsewhere in eppy a short notice with a Read action. Seeking over one doesn't count.
+
 ## v0.12.0: transcripts made on the PC
 
 - **Transcribe on the PC, read along on the phone:** `tools/pc-transcribe` turns an audiobook into a

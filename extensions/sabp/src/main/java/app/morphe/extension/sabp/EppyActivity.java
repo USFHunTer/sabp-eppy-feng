@@ -20,7 +20,6 @@ import android.view.WindowInsetsController;
 import android.view.animation.PathInterpolator;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,7 +31,6 @@ import app.morphe.extension.sabp.ui.EppyIcon;
 import app.morphe.extension.sabp.ui.HomePage;
 import app.morphe.extension.sabp.ui.Host;
 import app.morphe.extension.sabp.ui.LibraryPage;
-import app.morphe.extension.sabp.ui.PlayButton;
 import app.morphe.extension.sabp.ui.PlayerPane;
 import app.morphe.extension.sabp.ui.SettingsPage;
 import app.morphe.extension.sabp.ui.Sheet;
@@ -65,10 +63,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
     private PlayerPane sidePane;
     private PlayerPane overlayPane;
     private View miniPlayer;
-    private PlayButton miniPlay;
-    private TextView miniTitle, miniSub;
-    private ImageView miniCover;
-    private View miniProgress;
+    private app.morphe.extension.sabp.ui.MiniBar mini;
     private LinearLayout navContainer;
     private LinearLayout navBar;
     private LinearLayout dock;
@@ -82,7 +77,6 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
     private int widthClass;
     private String lastBook;
     private boolean lastHadSession;
-    private Bitmap lastCover;
     private boolean visible;
     private Object backCallback;
 
@@ -259,7 +253,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
                 @Override
                 public void onBackProgressed(android.window.BackEvent e) {
                     PlayerPane p = overlayPane != null ? overlayPane : sidePane;
-                    if (p != null && p.sheetState() != app.morphe.extension.sabp.ui.PlayerSheet.COLLAPSED && Sheet.current == null) {
+                    if (p != null && fsRoot == null && p.sheetState() != app.morphe.extension.sabp.ui.PlayerSheet.COLLAPSED && Sheet.current == null) {
                         p.backProgress(e.getProgress());
                     }
                 }
@@ -288,6 +282,10 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
     private void handleBack() {
         if (Sheet.current != null) {
             Sheet.current.dismiss();
+            return;
+        }
+        if (fsRoot != null) {
+            closeFullScreenReading();
             return;
         }
         if (overlayPane != null && overlayPane.onBack()) return;
@@ -322,6 +320,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         theme.activateFont();
         widthClass = widthClass();
         Sheet.current = null;
+        if (fsRoot != null) closeFullScreenReading();
 
         root = new FrameLayout(this);
         root.setBackground(theme.background());
@@ -602,6 +601,11 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
 
     @Override
     public void showUndo(String message, Runnable undo) {
+        showMessage(message, "Undo", undo);
+    }
+
+    @Override
+    public void showMessage(String message, String actionLabel, Runnable undo) {
         if (undoBar != null) root.removeView(undoBar);
         LinearLayout bar = Ui.row(this);
         bar.setPadding(Ui.dp(this, 16), 0, Ui.dp(this, 8), 0);
@@ -612,7 +616,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         bar.addView(Ui.text(this, theme, message, 14, 500, onInverse), Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         // Inverse surface: the action uses the opposite scheme's primary so it stays readable.
         int actionColor = theme.dark ? EppyTheme.blend(theme.primary, 0xFF000000, 0.45f) : EppyTheme.blend(theme.primary, 0xFFFFFFFF, 0.55f);
-        TextView action = Ui.text(this, theme, "Undo", 14, 650, actionColor);
+        TextView action = Ui.text(this, theme, actionLabel, 14, 650, actionColor);
         action.setPadding(Ui.dp(this, 12), Ui.dp(this, 12), Ui.dp(this, 12), Ui.dp(this, 12));
         bar.addView(action);
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 52), Gravity.BOTTOM);
@@ -725,41 +729,8 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
     }
 
     private View buildMiniPlayer() {
-        FrameLayout wrap = new FrameLayout(this);
-        float r = Ui.dp(this, 20);
-        wrap.setBackground(Ui.ripple(theme, Ui.rounded(theme.cardShadow ? theme.surfaceContainerLow : theme.surfaceContainerHighest, r), r));
-        wrap.setElevation(Ui.dp(this, 6));
-        Ui.clip(wrap, r);
-        LinearLayout row = Ui.row(this);
-        row.setPadding(Ui.dp(this, 8), 0, Ui.dp(this, 8), 0);
-        miniCover = Ui.cover(this, theme, null, 12);
-        row.addView(miniCover, new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 48)));
-        LinearLayout texts = Ui.column(this);
-        texts.setPadding(Ui.dp(this, 12), 0, Ui.dp(this, 8), 0);
-        miniTitle = Ui.singleLine(Ui.text(this, theme, "", 15, 600, theme.onSurface));
-        miniSub = Ui.singleLine(Ui.text(this, theme, "", 13, 400, theme.onSurfaceVariant));
-        miniSub.setPadding(0, Ui.dp(this, 3), 0, 0);
-        texts.addView(miniTitle);
-        texts.addView(miniSub);
-        row.addView(texts, Ui.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        row.addView(Ui.iconButton(this, theme, EppyIcon.REWIND, theme.onSurface, 0, "Rewind",
-                v -> player.command(EppyBridge.ACTION_REWIND_SMALL)));
-        miniPlay = new PlayButton(this);
-        miniPlay.apply(theme);
-        miniPlay.setOnClickListener(v -> {
-            Ui.haptic(v, theme);
-            player.playPause();
-        });
-        LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(Ui.dp(this, 44), Ui.dp(this, 44));
-        pl.leftMargin = Ui.dp(this, 4);
-        row.addView(miniPlay, pl);
-        wrap.addView(row, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        miniProgress = new View(this);
-        miniProgress.setBackgroundColor(theme.primary);
-        miniProgress.setPivotX(0);
-        wrap.addView(miniProgress, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 3), Gravity.BOTTOM));
-        wrap.setClickable(true);
-        wrap.setFocusable(true);
+        mini = new app.morphe.extension.sabp.ui.MiniBar(this, theme, player, false);
+        FrameLayout wrap = mini.root;
         wrap.setContentDescription("Mini-player. Double-tap to open the player");
         wrap.setOnClickListener(v -> openPlayer());
         wrap.setOnTouchListener(new MiniSwipe());
@@ -1058,6 +1029,8 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         if (sidePane != null) sidePane.update(true);
         if (overlayPane != null) overlayPane.update(true);
         updateMini();
+        if (fsMini != null) fsMini.update(player);
+        if (fsTab != null && bookChanged) fsTab.refresh(true);
         maybeUpdateCoverAccent();
     }
 
@@ -1067,24 +1040,12 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         boolean show = player.hasSession() && !playerOpen && !miniDismissed;
         miniPlayer.setVisibility(show ? View.VISIBLE : View.GONE);
         if (!show) return;
-        miniTitle.setText(player.bookTitle());
-        String ch = player.chapterTitle();
-        miniSub.setText(ch != null && !ch.equals(player.bookTitle()) ? ch : "");
-        Bitmap c = player.cover();
-        if (c != lastCover) {
-            Ui.setCover(miniCover, theme, c);
-            lastCover = c;
-        }
-        miniPlay.setPlaying(player.isPlaying(), true);
-        tickMini();
+        mini.update(player);
     }
 
     private void tickMini() {
-        if (miniPlayer == null || miniPlayer.getVisibility() != View.VISIBLE) return;
-        long[] ch = player.chapterProgressMs();
-        long d = ch != null ? ch[1] : player.durationMs();
-        long pos = ch != null ? ch[0] : player.positionMs();
-        miniProgress.setScaleX(d > 0 ? pos / (float) d : 0f);
+        if (miniPlayer != null && miniPlayer.getVisibility() == View.VISIBLE) mini.tick(player);
+        if (fsMini != null) fsMini.tick(player);
     }
 
     private void tick() {
@@ -1093,7 +1054,13 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
             ReadAlong ra = ReadAlong.get(this);
             ra.openBook(b.folderUri);
             ra.tick(player.bookPositionSeconds(), player.isPlaying());
+            // A tick moves ~0.5-1 s of book time times the speed; anything bigger is a seek.
+            int[] sk = skipWatcher.update(player.bookPositionSeconds(), player.isPlaying(), Math.max(4, 3 * player.speed()), ra::skippedStartingBetween);
+            if (sk != null) onSkipCrossed(sk);
+        } else {
+            skipWatcher.reset();
         }
+        if (fsTab != null) fsTab.refresh(false);
         if (overlayPane != null) overlayPane.update(false);
         if (sidePane != null) sidePane.update(false);
         if (home != null && tab == TAB_HOME && pageStack.isEmpty()) home.tick();
@@ -1234,5 +1201,80 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
     @Override
     public ViewGroup overlayRoot() {
         return root;
+    }
+
+    // ---- skipped passages, full-screen reading ----------------------------------------------
+
+    private final app.morphe.extension.sabp.read.SkipWatcher skipWatcher = new app.morphe.extension.sabp.read.SkipWatcher();
+    private FrameLayout fsRoot;
+    private app.morphe.extension.sabp.ui.ReadTab fsTab;
+    private app.morphe.extension.sabp.ui.MiniBar fsMini;
+
+    /** Playback ran into a skipped passage: the Read tab or full screen offers a pause; elsewhere a short notice. */
+    private void onSkipCrossed(int[] sk) {
+        if (fsTab != null) {
+            fsTab.onSkipCrossed(sk);
+            return;
+        }
+        PlayerPane p = overlayPane != null ? overlayPane : sidePane;
+        if (p != null && p.readShowing()) {
+            p.readTab().onSkipCrossed(sk);
+            return;
+        }
+        int n = sk[1] - sk[0] + 1;
+        showMessage("Skipped passage: " + n + " words of the book aren't in the audiobook", "Read", () -> {
+            openPlayer();
+            PlayerPane q = overlayPane != null ? overlayPane : sidePane;
+            if (q == null) return;
+            q.showSheet(app.morphe.extension.sabp.ui.PlayerSheet.TAB_READ);
+            q.readTab().showPassage(sk);
+        });
+    }
+
+    @Override
+    public void openFullScreenReading() {
+        if (fsRoot != null || player.book() == null) return;
+        EppyTheme pt = theme.playerTheme();
+        fsTab = new app.morphe.extension.sabp.ui.ReadTab(this, pt, true);
+        FrameLayout f = new FrameLayout(this);
+        f.setBackgroundColor(pt.surface);
+        f.setClickable(true); // nothing underneath reacts to touches
+        LinearLayout col = Ui.column(this);
+        col.setPadding(0, Ui.dp(this, 8), 0, 0);
+        col.addView(fsTab.view(), Ui.lp(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        fsMini = new app.morphe.extension.sabp.ui.MiniBar(this, pt, player, true);
+        fsMini.root.setContentDescription("Mini-player. Double-tap to leave full screen and open the player");
+        fsMini.root.setOnClickListener(v -> {
+            closeFullScreenReading();
+            openPlayer();
+        });
+        LinearLayout.LayoutParams ml = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 64));
+        ml.setMargins(Ui.dp(this, 12), Ui.dp(this, 4), Ui.dp(this, 12), Ui.dp(this, 12));
+        col.addView(fsMini.root, ml);
+        f.addView(col, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        root.addView(f, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        fsRoot = f;
+        fsTab.refresh(true);
+        fsMini.update(player);
+        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        android.view.WindowInsetsController ic = getWindow().getInsetsController();
+        if (ic != null) {
+            ic.setSystemBarsBehavior(android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            ic.hide(WindowInsets.Type.systemBars());
+        }
+        root.announceForAccessibility("Full-screen reading");
+    }
+
+    @Override
+    public void closeFullScreenReading() {
+        if (fsRoot == null) return;
+        root.removeView(fsRoot);
+        fsTab.detach();
+        fsRoot = null;
+        fsTab = null;
+        fsMini = null;
+        getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        android.view.WindowInsetsController ic = getWindow().getInsetsController();
+        if (ic != null) ic.show(WindowInsets.Type.systemBars());
     }
 }

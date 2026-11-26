@@ -79,8 +79,19 @@ Pair an EPUB or PDF with an audiobook (player sheet → **Read along** → *Choo
   - *Approximate* or *Estimated*: paragraph highlight only.
   - *Not in the audiobook*: text the narrator skips (found from the transcript) has a light red tint and a label.
     The highlight jumps over it.
-- **Tap** a paragraph to play from there.
-- **Long-press** a paragraph and choose "I'm hearing this now" to correct the position. Corrections are kept and outrank automatic matches.
+- **Tapping** the text does nothing, so reading never moves the audio.
+- **Long-press a word** for: *Play from here* (from that word), *Add "name" to characters* (the name grows over
+  capitalised words next to it, e.g. "Mara Rising Dawn"), *Translate "word"* and *Translate sentence* (handed to
+  Google Translate's popup, or any translator app that offers it), *Bookmark here* (titled with the chapter, with the
+  paragraph's opening words as its note), *Copy paragraph*, *Share quote*, and *I'm hearing this now* to correct the
+  position. Corrections are kept and outrank automatic matches.
+- **Skipped passages while you listen:** when playback reaches one, the Read tab shows "Skipped passage · N words not in
+  the audiobook" with a **Pause** button for 8 seconds. Pause scrolls to the passage and leaves a **Play** button until
+  you're done reading. Elsewhere in eppy a short notice appears with a **Read** action that opens the passage.
+- **Read chip:** the first chip under the player controls. Tap opens the Read tab; long-press opens full-screen reading.
+- **Full-screen reading:** the ⛶ button in the Read tab (or long-press the Read chip) shows the text over the whole
+  screen with a mini player at the bottom (rewind, play/pause, forward). The screen stays on and the system bars hide
+  until you swipe from the edge. Tap the mini player for the full player; Back or the button leaves full screen.
 - **Exact sync:** EPUBs with EPUB 3 Media Overlays (e.g. [Storyteller](https://gitlab.com/storyteller-platform/storyteller) "readaloud" books) use their own timings.
 - **No guessed jumps:** a phrase found in more than one place, or a low-confidence match, is rejected, and the status says so.
 
