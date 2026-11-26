@@ -20,7 +20,7 @@ Device verification: none of this has been checked on a device by the developer 
 | Data | Where SABP keeps it | Format | How eppy reaches it |
 |---|---|---|---|
 | Library (all books, state, progress) | `files/BooksDatabase_v6` | Java serialization of `BookData` list | `PlayerService` book-list method (from the Android Auto browser), then `BookData` fields by name (Serializable keeps them) |
-| Playback position | `BookData.mFileName`, `mFilePosition`, `mCurrentPlaybackTimeCache`; per-book backup `position.sabp.dat` in the book folder | serialization | media session + `filePosition` hook |
+| Playback position | `BookData.mFileName`, `mFilePosition`, `mCurrentPlaybackTimeCache`; per-book backup `position.sabp.dat` in the book folder (`BookDataBackup`: `mFileName`, `mFilePosition`, `mLastPlaybackTime`, …; written on every pause, every 120 s while playing and on book switch; read only when the library scan adds a new folder, never for a known book) | serialization | media session + `filePosition` hook |
 | Speed, skip silence | `BookData.mPlaybackSpeed`, `mSkipSilence`; default for new books in pref `defaultPlaybackSpeed`, `defaultSkipSilence_v2` | float / int 0–5 | read: `BookData` fields; write: `speed` hook (`PlayerService (FI)V`) |
 | Bookmarks | `bookmarks.sabp.xml` in the book folder | XML | `bookmarksLoad` / `bookmarksSave` hooks (SABP's own reader/writer) |
 | Characters | `characters.sabp.xml` in the book folder | XML `<root><character><name/><description/></character>` | `charactersLoad` / `charactersSave` hooks |
