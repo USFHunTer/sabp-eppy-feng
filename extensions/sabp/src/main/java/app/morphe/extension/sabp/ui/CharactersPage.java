@@ -162,8 +162,110 @@ public final class CharactersPage extends Page {
         EppyBridge.saveCharacters(c, raw, folder);
     }
 
+    // ---- the same list as a sheet over the player, so reading isn't left ----------------------------
+
+    /** The playing book's characters in a sheet: tap one to edit it, or add one. The player stays open. */
+    public static void showSheet(Host host, app.morphe.extension.sabp.EppyTheme t) {
+        android.content.Context c = host.activity();
+        EppyBook b = host.player().book();
+        if (b == null) {
+            toast(c, "Start a book first");
+            return;
+        }
+        if (!available()) {
+            toast(c, "The character list isn't available (see Settings → Diagnostics)");
+            return;
+        }
+        String folder = b.folderUri;
+        Handler main = new Handler(Looper.getMainLooper());
+        new Thread(() -> {
+            List<String[]> list = null;
+            try {
+                list = read(c, folder);
+            } catch (Throwable e) {
+                EppyDiag.error("characters", "load failed: " + e);
+            }
+            List<String[]> got = list;
+            main.post(() -> {
+                if (got == null) toast(c, "Couldn't read the characters");
+                else listSheet(host, t, folder, got);
+            });
+        }, "eppy-characters-sheet").start();
+    }
+
+    private static void listSheet(Host host, app.morphe.extension.sabp.EppyTheme t, String folder, List<String[]> list) {
+        android.content.Context c = host.activity();
+        Sheet sh = new Sheet(host.overlayRoot(), t, "Characters");
+        if (list.isEmpty()) {
+            android.widget.TextView empty = Ui.text(c, t, "No characters yet. Add a name and a short note; they're saved with the book "
+                    + "and also appear in the classic player.", 14, 400, t.onSurfaceVariant);
+            empty.setPadding(Ui.dp(c, 24), 0, Ui.dp(c, 24), Ui.dp(c, 8));
+            sh.content().addView(empty);
+        }
+        sh.item(EppyIcon.PLUS, "Add a character", null, () -> add(host, t, "", () -> showSheet(host, t)));
+        for (int i = 0; i < list.size(); i++) {
+            final int idx = i;
+            String[] it = list.get(i);
+            sh.item(EppyIcon.PERSON, it[0], it[1] == null || it[1].isEmpty() ? null : it[1], () -> editSheet(host, t, folder, list, idx));
+        }
+        sh.show();
+    }
+
+    private static void editSheet(Host host, app.morphe.extension.sabp.EppyTheme t, String folder, List<String[]> list, int idx) {
+        android.content.Context c = host.activity();
+        String[] it = list.get(idx);
+        Sheet sh = new Sheet(host.overlayRoot(), t, "Edit character");
+        EditText n = field(c, t, it[0], "Name", false);
+        EditText d = field(c, t, it[1] != null ? it[1] : "", "Who they are (your note)", true);
+        sh.content().addView(n);
+        sh.content().addView(d);
+        addSuggest(host, t, sh.content(), n, d);
+        sh.item(EppyIcon.CHECK, "Save", null, () -> {
+            String nm = n.getText().toString().trim();
+            if (nm.isEmpty()) return;
+            List<String[]> next = new ArrayList<>(list);
+            next.set(idx, new String[]{nm, d.getText().toString().trim()});
+            saveThen(host, t, folder, next, "Saved", null);
+        });
+        sh.item(EppyIcon.DELETE, "Delete", null, () -> {
+            List<String[]> next = new ArrayList<>(list);
+            next.remove(idx);
+            saveThen(host, t, folder, next, null, () -> host.showUndo(it[0] + " deleted", () -> saveThen(host, t, folder, list, null, null)));
+        });
+        sh.show();
+    }
+
+    /** Saves in the background, then shows the list again (and a message, or runs {@code after}). */
+    private static void saveThen(Host host, app.morphe.extension.sabp.EppyTheme t, String folder, List<String[]> next, String msg, Runnable after) {
+        android.content.Context c = host.activity();
+        Handler main = new Handler(Looper.getMainLooper());
+        new Thread(() -> {
+            boolean ok = true;
+            try {
+                write(c, folder, next);
+            } catch (Throwable e) {
+                EppyDiag.error("characters", "save failed: " + e);
+                ok = false;
+            }
+            boolean saved = ok;
+            main.post(() -> {
+                if (!saved) {
+                    toast(c, "Couldn't save the characters");
+                    return;
+                }
+                if (msg != null) toast(c, msg);
+                if (after != null) after.run();
+                listSheet(host, t, folder, next);
+            });
+        }, "eppy-characters-save").start();
+    }
+
     /** "Add to characters" from the Read tab: the editor with the name filled in, saved with the playing book. */
     static void add(Host host, app.morphe.extension.sabp.EppyTheme t, String name) {
+        add(host, t, name, null);
+    }
+
+    static void add(Host host, app.morphe.extension.sabp.EppyTheme t, String name, Runnable afterSave) {
         EppyBook b = host.player().book();
         if (b == null) return;
         android.content.Context c = host.activity();
@@ -191,7 +293,10 @@ public final class CharactersPage extends Page {
                     msg = "Couldn't save the characters";
                 }
                 String m = msg;
-                main.post(() -> android.widget.Toast.makeText(c, m, android.widget.Toast.LENGTH_SHORT).show());
+                main.post(() -> {
+                    android.widget.Toast.makeText(c, m, android.widget.Toast.LENGTH_SHORT).show();
+                    if (afterSave != null) afterSave.run();
+                });
             }, "eppy-characters-add").start();
         });
         sh.show();

@@ -907,6 +907,9 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
 
     private void options() {
         Sheet sh = new Sheet(host.overlayRoot(), t, ra.docName());
+        if (host.player().book() != null) {
+            sh.item(EppyIcon.PERSON, "Characters", "Names and your notes, without leaving the book", () -> CharactersPage.showSheet(host, t));
+        }
         sh.item(EppyIcon.FOLDER, ra.hasDocument() ? "Pair a different file" : "Add the book's EPUB or PDF",
                 ra.hasDocument() ? null : "Used as a reference: names, and finding its place in the book", host::pickDocument);
         if (ra.speechSupported()) {

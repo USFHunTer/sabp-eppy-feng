@@ -172,7 +172,9 @@ eppy Settings → **Book information sources**:
 
 Settings → **AI character notes**: a switch (off by default), your Gemini API key (free from
 [Google AI Studio](https://aistudio.google.com/apikey); **Get a free key** opens it), Flash-Lite or Flash, and **Test**.
-Then the character editor (Characters page, or *Add to characters* from the Read tab) has two buttons under the note:
+Then the character editor has two buttons under the note. It opens from the Characters list (Read tab ⋮ → Characters,
+or Details → Characters, both over the player so you stay in the book; or the Characters page from Settings) and from
+*Add to characters* in the Read tab:
 
 - **Suggest from the book:** one line from the paragraphs that mention the name *before where you are listening* (the
   first 4 and the latest 8, up to about 3,000 words). It can't spoil. Needs the book's EPUB or text PDF.

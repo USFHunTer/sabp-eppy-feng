@@ -409,12 +409,12 @@ public final class SheetTabs {
             chars.setPadding(0, Ui.dp(c, 24), 0, Ui.dp(c, 4));
             col.addView(chars);
             col.addView(source("Spoiler protection is on: no provider eppy can use offers verified spoiler-free character descriptions, so none are shown. "
-                    + "Your own notes are in Characters below."));
+                    + "Your own notes are in Characters below; with Settings → AI character notes on, the editor can suggest one from what you've heard."));
 
             TextView more = Ui.text(c, t, "More", 16, 600, t.onSurface);
             more.setPadding(0, Ui.dp(c, 24), 0, Ui.dp(c, 4));
             col.addView(more);
-            col.addView(Ui.linkRow(c, t, EppyIcon.PERSON, "Characters", "Names and your notes", v -> host.pushPage(CharactersPage.KEY, null)));
+            col.addView(Ui.linkRow(c, t, EppyIcon.PERSON, "Characters", "Names and your notes", v -> CharactersPage.showSheet(host, t)));
             col.addView(Ui.linkRow(c, t, EppyIcon.CHART, "Listening statistics", "Time listened per month and book", v -> host.pushPage(StatisticsPage.KEY, null)));
             col.addView(Ui.linkRow(c, t, EppyIcon.HISTORY, "History", "Undo an accidental jump, recent books", v -> host.pushPage(HistoryPage.KEY, null)));
         }

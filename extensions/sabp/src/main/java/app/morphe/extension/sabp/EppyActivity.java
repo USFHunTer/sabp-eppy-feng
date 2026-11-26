@@ -989,7 +989,11 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
                             Toast.makeText(this, rotate ? "Rotate to control off" : "Rotate to control on", Toast.LENGTH_SHORT).show();
                         })
                 .item(EppyIcon.BOOKMARK, "Bookmarks", "Jump to or edit saved moments", () -> showPlayerSheet(app.morphe.extension.sabp.ui.PlayerSheet.TAB_BOOKMARKS))
-                .item(EppyIcon.PERSON, "Characters", "Who's who in this book", () -> pushPage(app.morphe.extension.sabp.ui.CharactersPage.KEY, null))
+                .item(EppyIcon.PERSON, "Characters", "Who's who in this book", () -> {
+                    // Over the player when it's open, so listening and reading aren't left.
+                    if (playerOpen || sidePane != null) app.morphe.extension.sabp.ui.CharactersPage.showSheet(this, theme);
+                    else pushPage(app.morphe.extension.sabp.ui.CharactersPage.KEY, null);
+                })
                 .item(EppyIcon.HISTORY, "History", "Undo an accidental jump", () -> pushPage(app.morphe.extension.sabp.ui.HistoryPage.KEY, null))
                 .item(EppyIcon.CHART, "Statistics", "Listening time for this book", () -> pushPage(app.morphe.extension.sabp.ui.StatisticsPage.KEY, null))
                 .item(EppyIcon.BOOK, "Open a text or PDF file", "Files next to the audio, in another app", () -> app.morphe.extension.sabp.ui.ControlsPanels.showTextFiles(h))

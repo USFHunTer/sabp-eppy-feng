@@ -1,5 +1,11 @@
 # Release notes
 
+## v0.15.2: characters without leaving the book
+
+- **Characters open over the player:** Details → Characters, the Read tab's ⋮ menu → Characters, and More →
+  Characters (while the player is open) show the list in a sheet over the book instead of switching to another
+  screen. Tap a character to edit it (with the suggest buttons, if on) or delete it with Undo, or add one.
+
 ## v0.15.1: typing in sheets, web search on a free key
 
 - **The keyboard no longer covers what you type:** the character editor (and every other sheet with a text field)

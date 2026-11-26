@@ -130,6 +130,8 @@ On the tablet:
    Flash-Lite; Diagnostics shows the first refusal (429 on the newest model) and nothing secret.
 5b. Typing a name or note: the keyboard pushes the editor up; the field stays visible.
 6. Read tab → long-press a name → Add to characters: same buttons.
+6b. Read tab ⋮ → Characters, and Details → Characters: the list opens over the player; edit, delete (Undo), add;
+    closing it leaves you in the book.
 7. Settings → Back up: the saved file doesn't contain the key.
 
 ## Device checklist: Read tab actions and full-screen reading (v0.13.0, not yet on a device)
