@@ -224,3 +224,7 @@ v0.16.3 (fix, not yet on a device): the offer never appeared in v0.16.0–v0.16.
 "now" when it's opened (`BookData.P0`, found in `classes.dex`). After re-patching both devices: play and pause on one
 device; open the book (or More → Check the other device) on the other: the offer appears, also while it plays. Note:
 the first save on each device after updating is what teaches eppy which file is its own.
+
+**On a device (2026-11-26, v0.16.3):** with Syncthing-Fork sharing the library folder between a tablet and a phone,
+playing and pausing on the tablet made the phone offer "Another device is at …" when the book was opened. The
+other direction, Jump itself and "Paired with" were set up but not reported on separately.
