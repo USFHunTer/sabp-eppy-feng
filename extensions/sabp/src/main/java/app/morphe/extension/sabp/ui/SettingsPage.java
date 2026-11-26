@@ -122,6 +122,9 @@ public final class SettingsPage {
         LinearLayout info = group("Book information sources");
         bookInfo(info);
 
+        LinearLayout ai = group("AI character notes");
+        aiNotes(ai);
+
         LinearLayout backup = group("Back up eppy settings");
         backup.addView(Ui.linkRow(c, t, EppyIcon.DOWNLOAD, "Save a backup", "Appearance, player interface, read-along and book-information settings, as a JSON file",
                 v -> host.requestDocument(true, "application/json", "eppy-settings.json", uri -> {
@@ -330,6 +333,71 @@ public final class SettingsPage {
             box.addView(row);
         }
         return box;
+    }
+
+    /** Gemini-suggested character notes: switch, the user's own key, model, Test. */
+    private void aiNotes(LinearLayout box) {
+        android.content.SharedPreferences ap = app.morphe.extension.sabp.info.Gemini.prefs(c);
+        box.addView(switchRow("Suggest character notes",
+                "Off by default. Adds “Suggest from the book” and “Search the web” to the character editor, using Google's Gemini with your own free API key.",
+                ap.getBoolean("on", false), on -> ap.edit().putBoolean("on", on).apply()));
+        android.widget.EditText key = new android.widget.EditText(c);
+        key.setHint("Gemini API key");
+        key.setText(app.morphe.extension.sabp.info.Gemini.key(c));
+        key.setSingleLine(true);
+        key.setTextColor(t.onSurface);
+        key.setHintTextColor(t.onSurfaceVariant);
+        key.setBackground(Ui.rounded(t.surfaceContainerHigh, Ui.dp(c, 16)));
+        key.setPadding(Ui.dp(c, 16), 0, Ui.dp(c, 16), 0);
+        key.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        key.addTextChangedListener(new android.text.TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int a, int b, int n) {
+            }
+
+            public void onTextChanged(CharSequence s, int a, int b, int n) {
+            }
+
+            public void afterTextChanged(android.text.Editable e) {
+                ap.edit().putString("key", e.toString().trim()).apply();
+            }
+        });
+        LinearLayout.LayoutParams kl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(c, 48));
+        kl.setMargins(Ui.dp(c, 16), Ui.dp(c, 4), Ui.dp(c, 16), Ui.dp(c, 4));
+        box.addView(key, kl);
+        box.addView(switchRow("Fastest model (Flash-Lite)",
+                "On: Gemini Flash-Lite, the largest free allowance. Off: Gemini Flash, slightly better notes, a smaller free allowance.",
+                app.morphe.extension.sabp.info.Gemini.lite(c), on -> ap.edit().putBoolean("lite", on).apply()));
+        LinearLayout row = Ui.row(c);
+        row.setPadding(Ui.dp(c, 16), 0, Ui.dp(c, 16), 0);
+        row.addView(Ui.textButton(c, t, "Get a free key", v -> {
+            try {
+                c.startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://aistudio.google.com/apikey")));
+            } catch (Throwable e) {
+                android.widget.Toast.makeText(c, "Open aistudio.google.com/apikey in a browser", android.widget.Toast.LENGTH_LONG).show();
+            }
+        }));
+        row.addView(Ui.textButton(c, t, "Test", v -> {
+            android.widget.Toast.makeText(c, "Asking Gemini…", android.widget.Toast.LENGTH_SHORT).show();
+            android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+            new Thread(() -> {
+                String msg;
+                try {
+                    msg = "Works · " + app.morphe.extension.sabp.info.Gemini.test(c);
+                } catch (Throwable e) {
+                    msg = e instanceof app.morphe.extension.sabp.info.Gemini.Failure ? e.getMessage() : "Didn't work: " + e;
+                }
+                String m = msg;
+                main.post(() -> android.widget.Toast.makeText(c, m, android.widget.Toast.LENGTH_LONG).show());
+            }, "eppy-ai-test").start();
+        }));
+        box.addView(row);
+        TextView note = Ui.text(c, t, "What's sent: “Suggest from the book” sends the book's title, the name and up to about 3,000 words "
+                + "of the paragraphs that mention it, only from what you've heard so far, so it can't spoil. “Search the web” sends the title, "
+                + "author and name, and Google searches the web: that can reveal later plot. On Google's free tier, Google may use what you "
+                + "send to improve its products, and people may read it. The key stays on this device and isn't included in settings backups.",
+                13, 400, t.onSurfaceVariant);
+        note.setPadding(Ui.dp(c, 16), Ui.dp(c, 4), Ui.dp(c, 16), Ui.dp(c, 8));
+        box.addView(note);
     }
 
     private void bookInfo(LinearLayout box) {

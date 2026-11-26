@@ -104,6 +104,22 @@ Driven by the developer through scrcpy on the user's phone.
 | Seek bar on a 33 h single-file book | **fail** → fixed in 0.8.1 (now per chapter) |
 
 
+## Device checklist: AI character notes (v0.14.0, not yet on a device)
+
+Verified without a device: `CharacterExcerptsTest` (only paragraphs before the listening position, first 4 + latest 8,
+3,000-word cap, possessives, multi-word names), `GeminiTest` (request bodies, one-line answers, error messages, picking
+the newest stable model from canned JSON; no live calls) and `AiKeyBackupTest` (the key isn't in a settings backup).
+
+On the tablet:
+1. Settings → AI character notes: Get a free key opens AI Studio; paste the key; Test says "Works · gemini-…".
+   A wrong key says it isn't valid.
+2. Characters → Add: with the switch on, the two buttons show under the note; off, they don't.
+3. Early in a volume, Suggest from the book for a character who appears later says there's no mention yet.
+4. For Tobin, a one-line note appears in the note field; with a note already typed it's added on a new line.
+5. Search the web for a character gives a general line (may spoil).
+6. Read tab → long-press a name → Add to characters: same buttons.
+7. Settings → Back up: the saved file doesn't contain the key.
+
 ## Device checklist: Read tab actions and full-screen reading (v0.13.0, not yet on a device)
 
 Verified without a device: `WordsTest` (word under the finger, names, sentences), `SkipWatcherTest` (only normal

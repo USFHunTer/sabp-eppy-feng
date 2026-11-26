@@ -1,5 +1,14 @@
 # Release notes
 
+## v0.14.0: suggested character notes
+
+- **Suggest a character's note with Gemini** (Settings → AI character notes, off by default, your own free Google key).
+  In the character editor, *Suggest from the book* writes one line from what the book has said about the name so far,
+  only up to where you're listening, so it can't spoil. *Search the web (may spoil)* writes one line from a Google
+  Search. A suggestion never replaces your note: it fills an empty one or goes on a new line.
+- **Free in practice:** within Google's free tier there's no charge; past it a note costs a fraction of a cent.
+- **The key stays on the device:** it isn't part of settings backups and never appears in the log.
+
 ## v0.13.1: Read tab opens at your place
 
 - **No more scrolling from the top:** full-screen reading, and the Read tab after coming back to eppy, open right at

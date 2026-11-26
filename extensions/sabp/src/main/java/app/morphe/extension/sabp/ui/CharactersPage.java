@@ -106,6 +106,7 @@ public final class CharactersPage extends Page {
         EditText desc = field(c, t, it[1], "Who they are (your note)", true);
         sh.content().addView(name);
         sh.content().addView(desc);
+        addSuggest(host, t, sh.content(), name, desc);
         sh.item(EppyIcon.CHECK, "Save", null, () -> {
             String n = name.getText().toString().trim();
             if (n.isEmpty()) return;
@@ -173,6 +174,7 @@ public final class CharactersPage extends Page {
         EditText d = field(c, t, "", "Who they are (your note)", true);
         sh.content().addView(n);
         sh.content().addView(d);
+        addSuggest(host, t, sh.content(), n, d);
         sh.item(EppyIcon.CHECK, "Save", "Saved with the book; also in the classic player", () -> {
             String nm = n.getText().toString().trim();
             String note = d.getText().toString().trim();
@@ -194,6 +196,91 @@ public final class CharactersPage extends Page {
         });
         sh.show();
         n.requestFocus();
+    }
+
+    private interface Ask {
+        String run() throws Exception;
+    }
+
+    /**
+     * "Suggest from the book" and "Search the web (may spoil)" under the note field, when Settings →
+     * AI character notes is on. A suggestion fills an empty note, or goes on a new line under the user's.
+     */
+    static void addSuggest(Host host, app.morphe.extension.sabp.EppyTheme t, LinearLayout box, EditText name, EditText note) {
+        android.content.Context c = host.activity();
+        if (!app.morphe.extension.sabp.info.Gemini.ready(c)) return;
+        app.morphe.extension.sabp.read.ReadAlong ra = app.morphe.extension.sabp.read.ReadAlong.get(c);
+        app.morphe.extension.sabp.read.BookText text = ra.text();
+        boolean[] busy = {false};
+        LinearLayout row = Ui.row(c);
+        row.setPadding(Ui.dp(c, 24), Ui.dp(c, 4), Ui.dp(c, 24), Ui.dp(c, 8));
+        if (text != null && !text.pagesOnly) {
+            row.addView(Ui.chip(c, t, EppyIcon.BOOK, "Suggest from the book", false, v -> {
+                String nm = name.getText().toString().trim();
+                double pos = host.player().bookPositionSeconds();
+                if (nm.isEmpty()) toast(c, "Type the character's name first");
+                else if (pos < 0) toast(c, "Start listening first: the note only uses what you've heard");
+                else {
+                    int heard = ra.unitAt(pos);
+                    String title = host.player().bookTitle();
+                    ask(c, note, busy, () -> {
+                        List<String> ex = app.morphe.extension.sabp.read.CharacterExcerpts.pick(text, nm, heard);
+                        if (ex.isEmpty()) throw new app.morphe.extension.sabp.info.Gemini.Failure("No mention of " + nm + " yet in what you've heard");
+                        return app.morphe.extension.sabp.info.Gemini.fromBook(c, title, nm, ex);
+                    });
+                }
+            }));
+            row.addView(Ui.space(c, 8, 1));
+        }
+        row.addView(Ui.chip(c, t, EppyIcon.WEB_SEARCH, "Search the web (may spoil)", false, v -> {
+            String nm = name.getText().toString().trim();
+            if (nm.isEmpty()) {
+                toast(c, "Type the character's name first");
+                return;
+            }
+            String title = host.player().bookTitle();
+            String author = text != null ? text.author : null;
+            ask(c, note, busy, () -> app.morphe.extension.sabp.info.Gemini.fromWeb(c, title, author, nm));
+        }));
+        android.widget.HorizontalScrollView hs = new android.widget.HorizontalScrollView(c);
+        hs.setHorizontalScrollBarEnabled(false);
+        hs.addView(row);
+        box.addView(hs);
+    }
+
+    private static void ask(android.content.Context c, EditText note, boolean[] busy, Ask a) {
+        if (busy[0]) return;
+        busy[0] = true;
+        CharSequence hint = note.getHint();
+        note.setHint("Asking Gemini…");
+        Handler main = new Handler(Looper.getMainLooper());
+        new Thread(() -> {
+            String got = null, err = null;
+            try {
+                got = a.run();
+            } catch (app.morphe.extension.sabp.info.Gemini.Failure f) {
+                err = f.getMessage();
+            } catch (Throwable e) {
+                EppyDiag.log("ai", "suggest failed: " + e);
+                err = "Couldn't get a suggestion: " + e.getMessage();
+            }
+            String g = got, m = err;
+            main.post(() -> {
+                busy[0] = false;
+                note.setHint(hint);
+                if (g == null) {
+                    toast(c, m);
+                    return;
+                }
+                String cur = note.getText().toString().trim();
+                note.setText(cur.isEmpty() ? g : cur + "\n" + g);
+                note.setSelection(note.getText().length());
+            });
+        }, "eppy-ai-suggest").start();
+    }
+
+    private static void toast(android.content.Context c, String m) {
+        android.widget.Toast.makeText(c, m, android.widget.Toast.LENGTH_LONG).show();
     }
 
     private static Object get(Object o, String name) {

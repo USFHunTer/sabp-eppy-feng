@@ -136,6 +136,10 @@ More detail: [tools/pc-transcribe/README.md](tools/pc-transcribe/README.md).
   notification permissions. It's only running while you've turned it on for a book.
 - **Book information lookups are off by default.** When on, only the title and author of the book you look up go to the
   providers you enabled.
+- **AI character notes are off by default.** When on, a tap on *Suggest from the book* sends the book's title, the
+  character's name and up to about 3,000 words of the paragraphs that mention it (only from what you've heard) to
+  Google's Gemini API with your own key; *Search the web* sends the title, author and name. On Google's free tier, Google
+  may use what you send to improve its products, and people may read it. The key isn't included in settings backups.
 
 ## Book information sources
 
@@ -155,6 +159,23 @@ eppy Settings → **Book information sources**:
 - **Characters:** spoiler protection is on, and no character information is shown. None of the providers offers verified
   spoiler-free character data. Wikipedia, Wikidata and fan wikis were evaluated and left out because they routinely reveal
   plot. ISFDB and publisher feeds weren't integrated (no suitable open API was verified).
+  For notes you choose to fill in yourself, see AI character notes below.
+
+## AI character notes (Gemini)
+
+Settings → **AI character notes**: a switch (off by default), your Gemini API key (free from
+[Google AI Studio](https://aistudio.google.com/apikey); **Get a free key** opens it), Flash-Lite or Flash, and **Test**.
+Then the character editor (Characters page, or *Add to characters* from the Read tab) has two buttons under the note:
+
+- **Suggest from the book:** one line from the paragraphs that mention the name *before where you are listening* (the
+  first 4 and the latest 8, up to about 3,000 words). It can't spoil. Needs the book's EPUB or text PDF.
+- **Search the web (may spoil):** one line from Gemini with Google Search: general, wiki-style information.
+
+A suggestion fills an empty note or goes on a new line under yours; nothing is saved until you tap Save.
+
+**Cost:** free within Google's free-tier limits. Past them, a book note is about $0.0004 (about 4,000 tokens in), and a web
+search about $0.014 once Google's monthly free searches are used up (Google's prices in Nov 2026). eppy uses the newest
+stable Flash-Lite (or Flash) from Google's model list. If the free limit is used up, the editor says so.
 
 ## Troubleshooting
 
