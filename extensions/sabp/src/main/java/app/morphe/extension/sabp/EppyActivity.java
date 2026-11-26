@@ -218,6 +218,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
     protected void onStart() {
         super.onStart();
         visible = true;
+        otherDeviceChecked = null;
         player.addListener(this);
         player.start();
         refreshAll(true);
@@ -607,6 +608,10 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
 
     @Override
     public void showMessage(String message, String actionLabel, Runnable undo) {
+        showMessage(message, actionLabel, undo, 6000);
+    }
+
+    private void showMessage(String message, String actionLabel, Runnable undo, long showMs) {
         if (undoBar != null) root.removeView(undoBar);
         LinearLayout bar = Ui.row(this);
         bar.setPadding(Ui.dp(this, 16), 0, Ui.dp(this, 8), 0);
@@ -635,7 +640,44 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
             undo.run();
             hide.run();
         });
-        handler.postDelayed(hide, 6000);
+        handler.postDelayed(hide, showMs);
+    }
+
+    // ---- the other device's position ("Sync between devices" patch) ------------------------------
+
+    /** The book whose position file was checked since eppy came to the foreground. */
+    private String otherDeviceChecked;
+
+    /** Once per book per visit: offers the position another device left in the book folder (docs/adr/0002). */
+    private void checkOtherDevice(EppyBook b) {
+        // While this device plays, it is the one writing the position file.
+        if (b == null || b.folderUri.equals(otherDeviceChecked) || player.isPlaying() || !OtherDevicePosition.enabled(this)) return;
+        double fp = player.filePositionSeconds();
+        if (fp < 0) return;
+        otherDeviceChecked = b.folderUri;
+        String hereFile = b.currentFile;
+        long hereAt = player.lastPlayedMs();
+        android.content.SharedPreferences prefs = getSharedPreferences("eppy_sync", MODE_PRIVATE);
+        new Thread(() -> {
+            OtherDevicePosition there = OtherDevicePosition.read(this, b.folderUri);
+            if (!OtherDevicePosition.worthOffering(hereFile, (int) fp, hereAt, there) || b.file(there.fileName) == null) return;
+            // Each offer is shown once: letting the bar go is the same as dismissing it.
+            String key = there.fileName + "|" + there.seconds + "|" + there.lastPlayed;
+            if (key.equals(prefs.getString("offered:" + b.folderUri, null))) return;
+            prefs.edit().putString("offered:" + b.folderUri, key).apply();
+            handler.post(() -> showOtherDevice(b, there));
+        }, "eppy-sync").start();
+    }
+
+    private void showOtherDevice(EppyBook b, OtherDevicePosition there) {
+        EppyBook now = player.book();
+        if (!visible || now == null || !b.folderUri.equals(now.folderUri)) return;
+        EppyBook.FileItem f = b.file(there.fileName);
+        long at = (f != null && f.start >= 0 ? f.start : 0) + there.seconds;
+        String ago = android.text.format.DateUtils.getRelativeTimeSpanString(there.lastPlayed, System.currentTimeMillis(),
+                android.text.format.DateUtils.MINUTE_IN_MILLIS).toString();
+        showMessage("Another device is at " + Ui.time(at * 1000) + ", " + ago, "Jump",
+                () -> player.jumpTo(there.fileName, there.seconds, false), 15000);
     }
 
     private static final int REQ_DOC = 4711;
@@ -1062,6 +1104,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
             // A tick moves ~0.5-1 s of book time times the speed; anything bigger is a seek.
             int[] sk = skipWatcher.update(player.bookPositionSeconds(), player.isPlaying(), Math.max(4, 3 * player.speed()), ra::skippedStartingBetween);
             if (sk != null) onSkipCrossed(sk);
+            checkOtherDevice(b);
         } else {
             skipWatcher.reset();
         }

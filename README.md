@@ -49,6 +49,12 @@ A separate patch. SABP 11.7.8 has no analytics, ads or crash reporters (checked 
 Google comes from the Google Play billing library (usage events about billing, through Google's data transport). This
 patch removes that transport's upload channel from SABP's manifest, so the events are deleted on the device instead of
 sent. Purchases and the full-version check are untouched.
+
+### Sync between devices
+
+A separate patch, off by default; needs eppy. For a library folder kept the same on two devices by a folder-sync app
+(see [Sync between devices](#sync-between-devices)): when you open a book that the other device played further, eppy
+offers to jump there. eppy itself sends nothing anywhere.
 <!-- PATCHES_END -->
 
 ## Player interface: one switch
@@ -71,6 +77,8 @@ The full audit of entry points is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md
 ## Read along (prototype)
 
 Pair an EPUB or PDF with an audiobook (player sheet → **Read along** → *Choose EPUB or PDF*). The pairing is saved per audiobook.
+If the book's folder holds exactly one `.epub` or `.pdf`, eppy pairs it by itself when the book opens. After you remove
+a pairing, eppy leaves that book alone until you pick a document again.
 
 | Stage | What happens | Needs |
 |---|---|---|
@@ -130,6 +138,37 @@ the transcript instead, and eppy imports it; matching and skipped passages still
 
 More detail: [tools/pc-transcribe/README.md](tools/pc-transcribe/README.md).
 
+## Sync between devices
+
+SABP keeps each book's position, bookmarks and characters as files in the book's folder (`position.sabp.dat`,
+`bookmarks.sabp.xml`, `characters.sabp.xml`). Keep the library folder the same on your phone and tablet, and those
+travel with the books, along with PC transcript files and the EPUB/PDF. eppy adds no network code for this; a
+folder-sync app does the syncing. Why it's built this way: [docs/adr/0002](docs/adr/0002-sync-through-book-folder.md).
+
+**Setup (Syncthing, home Wi-Fi only):**
+1. Install **Syncthing-Fork** on both devices (F-Droid or Google Play). The original Syncthing Android app is
+   discontinued.
+2. On each device, in Syncthing's settings, turn off **Global discovery**, **Enable relaying** and **NAT traversal**,
+   so the devices only find each other on your home network and nothing goes through outside servers. Let it run on
+   Wi-Fi without needing to charge, and exclude it from battery optimisation.
+3. Pair the two devices (scan one's QR code with the other) and share the folder that holds your audiobooks as a
+   *Send & Receive* folder. Put it where SABP's library folder is on each device (or point SABP at it).
+4. In that folder's ignore patterns add `*Smart AudioBook Player Statistics`. SABP's listening statistics are one
+   file for the whole library that both devices write, so each device keeps its own.
+5. Apply the **Sync between devices** patch on both devices.
+
+**Using it:**
+- Pause before you switch devices: SABP writes the position on every pause (and every 2 minutes while playing).
+  A minute on the same Wi-Fi is enough for it to arrive.
+- Open the book on the other device: if that device's position is older, eppy shows *Another device is at 3:12:40,
+  2 hours ago* with **Jump**. It never jumps without asking, and each offer appears only once. Playing on instead
+  keeps this device's position, which then syncs back.
+- A book that's new to SABP (copied to the PC's folder, synced to both) starts where the other device left it, because
+  SABP reads the position file when it first adds a book.
+- Bookmarks and character notes need nothing: SABP reads them from the folder each time. If both devices change the
+  same book's bookmarks before syncing, the newer file wins; Syncthing keeps the other as a `.sync-conflict` file.
+- Not synced: listening statistics, transcripts made on the device itself, and eppy's settings.
+
 ## Privacy and permissions
 
 - **The microphone permission is only added if you turn on "Read-along speech matching"** in the patch options, and
@@ -138,6 +177,8 @@ More detail: [tools/pc-transcribe/README.md](tools/pc-transcribe/README.md).
   (verified in AOSP source; see [docs/TESTING.md](docs/TESTING.md)). eppy feeds it decoded audiobook audio and never
   opens the microphone, but Android may still show its microphone indicator while recognition runs.
 - **Read along never uploads** documents or audio.
+- **Sync between devices** only reads SABP's position file in the book folder; it has no network code. With the
+  Syncthing settings above, your files only move between your own devices on your home network.
 - **Transcribe the whole book** runs as a foreground service with a notification (progress, Stop) and keeps the
   phone awake only while it's transcribing or briefly paused (warm phone, error), never while paused for low battery. That's why the app declares the foreground-service, wake-lock and
   notification permissions. It's only running while you've turned it on for a book.
@@ -226,7 +267,8 @@ v0.4.0 is a stability release: Rounds 6–9 (routing, notification, read-along c
 - chapter-name and spoken-content search
 - playback profiles
 - a Wear OS app
-- cloud backup and sync
+- cloud backup (sync between your own devices works through a folder-sync app: see
+  [Sync between devices](#sync-between-devices))
 - bookmark and notes export
 - running eppy without adding a new activity (needed for root/mount installs)
 

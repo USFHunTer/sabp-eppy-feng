@@ -733,30 +733,41 @@ public final class Transcriber {
 
     /** {name, last modified, Uri} of the *.transcript.json files in a book folder (SAF tree or file path). */
     private List<Object[]> transcriptFiles(String folderUri) {
+        return folderFiles(app, folderUri, ".transcript.json");
+    }
+
+    /** Files in the book folder whose names end with one of the suffixes (any case): {name, lastModified, Uri}. */
+    static List<Object[]> folderFiles(Context c, String folderUri, String... suffixes) {
         ArrayList<Object[]> out = new ArrayList<>();
         Uri folder = Uri.parse(folderUri);
         try {
             if ("file".equals(folder.getScheme()) || folderUri.startsWith("/")) {
                 File[] fs = new File(folder.getPath() != null ? folder.getPath() : folderUri).listFiles();
                 if (fs != null) for (File f : fs) {
-                    if (f.isFile() && f.getName().endsWith(".transcript.json")) out.add(new Object[]{f.getName(), f.lastModified(), Uri.fromFile(f)});
+                    if (f.isFile() && endsWithAny(f.getName(), suffixes)) out.add(new Object[]{f.getName(), f.lastModified(), Uri.fromFile(f)});
                 }
                 return out;
             }
             Uri children = DocumentsContract.buildChildDocumentsUriUsingTree(folder, DocumentsContract.getDocumentId(folder));
-            try (android.database.Cursor cur = app.getContentResolver().query(children, new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+            try (android.database.Cursor cur = c.getContentResolver().query(children, new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID,
                     DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_LAST_MODIFIED}, null, null, null)) {
                 while (cur != null && cur.moveToNext()) {
                     String name = cur.getString(1);
-                    if (name != null && name.endsWith(".transcript.json")) {
+                    if (name != null && endsWithAny(name, suffixes)) {
                         out.add(new Object[]{name, cur.isNull(2) ? 0L : cur.getLong(2), DocumentsContract.buildDocumentUriUsingTree(folder, cur.getString(0))});
                     }
                 }
             }
         } catch (Throwable t) {
-            EppyDiag.log("transcribe", "import: can't list the book folder (" + t.getClass().getSimpleName() + ")");
+            EppyDiag.log("transcribe", "can't list the book folder (" + t.getClass().getSimpleName() + ")");
         }
         return out;
+    }
+
+    private static boolean endsWithAny(String name, String... suffixes) {
+        String n = name.toLowerCase(Locale.ROOT);
+        for (String s : suffixes) if (n.endsWith(s)) return true;
+        return false;
     }
 
     private String readText(Uri uri) throws Exception {

@@ -141,7 +141,8 @@ public final class DiagnosticsPage extends Page {
                 .append(Build.MANUFACTURER).append(' ').append(Build.MODEL).append('\n');
         b.append("Player interface: ").append(EppyRoute.playerInterface(c)).append('\n');
         b.append("Style: ").append(EppyTheme.prefs(c).getString("skin", EppyTheme.configString(c, "eppy_default_skin", "material"))).append('\n');
-        b.append("Speech matching patch option: ").append(EppyTheme.configString(c, "eppy_speech", "off"));
+        b.append("Speech matching patch option: ").append(EppyTheme.configString(c, "eppy_speech", "off")).append('\n');
+        b.append("Sync between devices patch: ").append(EppyTheme.configString(c, "eppy_device_sync", "off"));
         return b.toString();
     }
 

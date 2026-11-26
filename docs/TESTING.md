@@ -188,3 +188,22 @@ On the phone:
 7. Pair the EPUB: status shows "N passages matched to the transcript"; highlight stays right across
    the book's front matter and chapter breaks.
 8. Pause/resume, switch books, kill the app mid-transcription: no crash loop; it continues.
+
+## Device checklist: Sync between devices (v0.16.0, not yet on a device)
+
+Verified without a device: `OtherDevicePositionTest` reads a serialized `BookDataBackup` stand-in, refuses classes
+outside SABP's package and plain Java values, and offers only a newer position in another file or more than 30 s away;
+`AutoPairTest` pairs only a folder's single EPUB/PDF. SABP 11.7.8's read/write paths for `position.sabp.dat` were
+traced in its `classes.dex` (see `docs/inventory.md`). The patch module wasn't built locally (the patcher comes from
+GitHub Packages); CI builds it.
+
+On two devices with Syncthing-Fork sharing the library folder (README setup) and the patch applied on both:
+1. Diagnostics shows "Sync between devices patch: on".
+2. Play a book on the tablet, pause, wait a minute. Open eppy on the phone: "Another device is at …" with Jump appears
+   once; Jump moves to the tablet's place, paused, with the phone's own speed.
+3. Leave eppy and come back: the same offer doesn't appear again. Play on the tablet again: a new offer appears.
+4. Play on the phone instead of jumping: the tablet then gets the phone's position as an offer.
+5. Within 30 s of each other: no offer. Without the patch: no offer and no file read.
+6. A new book folder synced to both devices: SABP's library scan adds it at the other device's position.
+7. A book folder with one EPUB and no pairing: Read along pairs it when the book opens; Remove pairing, reopen the
+   book: it stays unpaired.

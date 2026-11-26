@@ -1,5 +1,16 @@
 # Release notes
 
+## v0.16.0: sync between your phone and tablet
+
+- **New separate patch, Sync between devices** (off by default). Keep your library folder the same on both devices
+  with a folder-sync app such as Syncthing (setup in the README: home Wi-Fi only, nothing through outside servers).
+  When you open a book the other device played further, eppy shows "Another device is at 3:12:40, 2 hours ago" with
+  **Jump**. It never jumps by itself. Bookmarks and character notes already travel with the book folder. eppy has no
+  network code for this.
+- **Read along pairs the book's document by itself** when the book folder holds exactly one EPUB or PDF. After you
+  remove a pairing, that book is left alone until you pick a document again.
+- Diagnostics shows whether the Sync between devices patch is applied.
+
 ## v0.15.3: tidier read-along menu for finished books
 
 - **Once a book is fully transcribed**, the Read tab's ⋮ menu no longer offers "Speed up for 30 minutes" or "Stop

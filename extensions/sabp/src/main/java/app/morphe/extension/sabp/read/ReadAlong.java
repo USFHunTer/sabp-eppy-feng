@@ -225,9 +225,26 @@ public final class ReadAlong {
         errorTitle = null;
         if (docUri == null) {
             set(State.NONE, "", "");
+            autoPair(folder);
             return;
         }
         load(false);
+    }
+
+    /** Pairs the book folder's only EPUB/PDF, unless the user unpaired this book (it then stays their choice). */
+    private void autoPair(String folder) {
+        if (!enabled() || prefs().getBoolean("unpaired:" + folder, false)) return;
+        worker.execute(() -> {
+            Object only = onlyDocument(Transcriber.folderFiles(c, folder, ".epub", ".pdf"));
+            if (only != null) main.post(() -> {
+                if (folder.equals(folderUri) && docUri == null) pair((Uri) only);
+            });
+        });
+    }
+
+    /** The Uri of the one document among the listed files ({name, lastModified, Uri}), or null when there are none or several. */
+    static Object onlyDocument(List<Object[]> files) {
+        return files.size() == 1 ? files.get(0)[2] : null;
     }
 
     public boolean hasDocument() {
@@ -250,7 +267,7 @@ public final class ReadAlong {
         if (docUri != null && !docUri.equals(copy.toString())) DocStore.deleteCopy(c, docUri);
         docUri = copy.toString();
         docName = name;
-        prefs().edit().putString("doc:" + folderUri, docUri).putString("name:" + folderUri, docName).apply();
+        prefs().edit().putString("doc:" + folderUri, docUri).putString("name:" + folderUri, docName).remove("unpaired:" + folderUri).apply();
         anchorFile().delete();
         alignment.clear(-1);
         failuresInRow = 0;
@@ -266,7 +283,7 @@ public final class ReadAlong {
             textCache(docUri).delete();
             DocStore.deleteCopy(c, docUri);
         }
-        prefs().edit().remove("doc:" + folderUri).remove("name:" + folderUri).apply();
+        prefs().edit().remove("doc:" + folderUri).remove("name:" + folderUri).putBoolean("unpaired:" + folderUri, true).apply();
         anchorFile().delete();
         docUri = null;
         docName = null;
