@@ -84,6 +84,7 @@ listed in eppy → Settings → Diagnostics → Patch hooks with the feature tha
 | `classicMenu` | optional | the `PlayerActivity` method that inflates and shows a `PopupMenu` | **Switch to eppy** in the classic ⋮ menu | app-icon shortcut only |
 | `exitService` | optional | the only `PlayerService () → void` that sends `ExitIntent` and calls `stopSelf` (what the classic player calls before opening the library: pause, save the book list, stop) | stop the player before SABP's library opens, Rebuild library | library opens with the player running (its old book list can overwrite the library's changes); no Rebuild |
 | `fullScan` | optional | the `LibraryActivity () → void` call `onOptionsItemSelected` makes right after reading `menu_full_scan`; plus a call injected at the start of `LibraryActivity.onCreate(Bundle)` | Rebuild library runs SABP's Full scan | no Rebuild |
+| `skipHiddenFolders` | optional | the only method with both `vnd.android.document/directory` and `info.txt` (SABP's folder lister, `g7.F` in 11.7.8): before its `list.add(new Item(name))` for a subfolder, `LibraryRebuild.isHiddenFolder(name)` jumps past the add | hidden folders (`.stversions` …) aren't scanned as books | Syncthing's old copies can show up as books |
 | `classicSettings` | optional | `PlayerSettingsActivity.onCreate`, after its first own-class call (the screen builder) | **Switch to eppy** row | app-icon shortcut only |
 
 Public, unobfuscated interfaces eppy also uses: PlayerService intent actions

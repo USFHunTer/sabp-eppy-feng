@@ -120,6 +120,8 @@ On a device whose library folder was reorganised (the tablet, 2026-11-27):
 - Rotating the phone during the scan doesn't start a second scan.
 - Without the speech model downloaded, a book with a complete PC transcript (Shadow Slave 9) says *The whole book is
   transcribed* in Read along, with no **Download speech model** button.
+- v0.18.1: with a `.stversions` folder holding old book copies (the tablet), Rebuild library lists each book once;
+  Diagnostics → Patch hooks lists `skipHiddenFolders=ok`.
 - Library manager (no rebuild): add a book folder, Full scan there, back to eppy: the book is listed and stays
   listed after playing and pausing another book (the old list no longer overwrites it).
 

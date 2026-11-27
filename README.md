@@ -153,7 +153,8 @@ folder-sync app does the syncing. Why it's built this way: [docs/adr/0002](docs/
    Wi-Fi without needing to charge, and exclude it from battery optimisation.
 3. Pair the two devices (scan one's QR code with the other) and share the folder that holds your audiobooks as a
    *Send & Receive* folder. Put it where SABP's library folder is on each device (or point SABP at it).
-4. In that folder's ignore patterns add `*Smart AudioBook Player Statistics`. SABP's listening statistics are one
+4. In that folder's settings set **File Versioning** to *No File Versioning* (the PC holds the books; old copies
+   would only fill the phone), and in its ignore patterns add `*Smart AudioBook Player Statistics`. SABP's listening statistics are one
    file for the whole library that both devices write, so each device keeps its own.
 5. Apply the **Sync between devices** patch on both devices.
 

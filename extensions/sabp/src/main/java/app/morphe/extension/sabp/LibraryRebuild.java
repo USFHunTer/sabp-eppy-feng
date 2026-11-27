@@ -55,6 +55,14 @@ public final class LibraryRebuild {
         return n;
     }
 
+    /**
+     * Injected into SABP's folder lister: a folder whose name starts with a dot (Syncthing's .stversions and
+     * .stfolder, a file manager's .trash) is skipped, so old copies kept there never show up as books.
+     */
+    public static boolean isHiddenFolder(String name) {
+        return name != null && name.startsWith(".");
+    }
+
     /** Injected at the start of SABP's LibraryActivity.onCreate: runs the Full scan a rebuild asked for. */
     public static void onLibraryCreated(Activity a, Bundle saved) {
         if (!wantsScan(a.getIntent(), saved)) return;

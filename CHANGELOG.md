@@ -1,5 +1,13 @@
 # Release notes
 
+## v0.18.1: hidden folders are never books
+
+- **Fixed: old copies kept by Syncthing showed up as duplicate books.** With File Versioning on, Syncthing keeps
+  replaced and deleted files in a hidden `.stversions` folder inside the shared folder, and SABP's scan listed every
+  folder, hidden or not. SABP's folder scan now skips folders whose name starts with a dot (`.stversions`,
+  `.stfolder`, a file manager's `.trash`), the way eppy's own Refresh already did. Run **Rebuild library** once to
+  drop the duplicates.
+
 ## v0.18.0: Rebuild library, and the library's own scan works again
 
 - **Fixed: books added or moved in the library folder didn't show, or showed up broken, even after SABP's Full scan.**

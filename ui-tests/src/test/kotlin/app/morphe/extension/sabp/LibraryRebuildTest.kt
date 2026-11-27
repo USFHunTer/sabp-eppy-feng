@@ -27,6 +27,15 @@ class LibraryRebuildTest {
     }
 
     @Test
+    fun hiddenFoldersAreNotScanned() {
+        assertTrue(LibraryRebuild.isHiddenFolder(".stversions"))
+        assertTrue(LibraryRebuild.isHiddenFolder(".stfolder"))
+        assertFalse(LibraryRebuild.isHiddenFolder("Volume 09 - Throne of War"))
+        assertFalse(LibraryRebuild.isHiddenFolder("Shadow Slave Vol. 1"))
+        assertFalse(LibraryRebuild.isHiddenFolder(null))
+    }
+
+    @Test
     fun anEmptyLibraryIsFine() {
         assertEquals(0, LibraryRebuild.clearDatabase(tmp.root))
     }

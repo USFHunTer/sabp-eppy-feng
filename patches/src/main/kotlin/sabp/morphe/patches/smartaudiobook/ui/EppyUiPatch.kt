@@ -1,6 +1,9 @@
 package sabp.morphe.patches.smartaudiobook.ui
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
+import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
 import app.morphe.patcher.patch.BytecodePatchContext
@@ -45,7 +48,7 @@ private const val CHARACTER = "$SABP/CharacterDescription;"
 private const val SLEEP_SETTINGS = "$SABP/PlayerSettingsSleepActivity;"
 private const val SETTINGS_ACTIVITY = "$SABP/PlayerSettingsActivity;"
 private const val LIBRARY_ACTIVITY = "$SABP/LibraryActivity;"
-const val EPPY_VERSION = "0.18.0"
+const val EPPY_VERSION = "0.18.1"
 private const val EPPY_ACTIVITY = "app.morphe.extension.sabp.EppyActivity"
 
 private fun newLauncherFilter(doc: org.w3c.dom.Document): Element =
@@ -240,6 +243,28 @@ private val eppyUiBytecodePatch = bytecodePatch(
                 }
             }
         }
+        // SABP's folder lister (the Full scan walks folders with it): for each subfolder it does
+        // `list.add(new Item(name))` and goes back to its loop, hidden folders included, so Syncthing's
+        // .stversions copies became books. Found by the two strings only it has.
+        val folderAdd = hooks.optional("skipHiddenFolders") {
+            classDefByStrings("vnd.android.document/directory").flatMap { it.methods }.filter {
+                it.hasString("vnd.android.document/directory") && it.hasString("info.txt")
+            }.singleOrNull()?.let { m ->
+                val insns = m.implementation?.instructions?.toList().orEmpty()
+                val inits = insns.withIndex().filter { (_, i) ->
+                    i.opcode == com.android.tools.smali.dexlib2.Opcode.INVOKE_DIRECT &&
+                        ((i as ReferenceInstruction).reference as MethodReference).let { r ->
+                            r.name == "<init>" && r.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/String;")
+                        }
+                }.map { it.index }
+                val at = inits.singleOrNull() ?: return@let null
+                val add = (insns.getOrNull(at + 1) as? ReferenceInstruction)?.reference as? MethodReference
+                val name = (insns[at] as com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction35c).registerD
+                if (add?.name == "add" && insns.getOrNull(at + 2)?.opcode?.name?.startsWith("GOTO") == true && name < 16) {
+                    Triple(m, at, name)
+                } else null
+            }
+        }
         val libraryOnCreate = if (fullScan == null) null else libraryActivity.methods.singleOrNull {
             it.name == "onCreate" && it.parameterTypes.map(CharSequence::toString) == listOf("Landroid/os/Bundle;")
         }
@@ -315,6 +340,22 @@ private val eppyUiBytecodePatch = bytecodePatch(
         listOfNotNull(books, coverKeys, loadCovers, seekTracking, seekTo, filePosition, jump, loadBookmarks, saveBookmarks,
             loadCharacters, saveCharacters, setSpeed, sleepRemaining, setBoost, setId3, setEqualizer, setRepeat,
             setSkipStartEnd, exitService, fullScan).forEach { makeAccessible(it) }
+
+        // Hidden folders (.stversions, .stfolder, .trash…) are never listed, so never scanned as books.
+        folderAdd?.let { (found, at, name) ->
+            val m = mutableClassDefBy(found.definingClass).methods.single {
+                it.name == found.name && it.parameterTypes == found.parameterTypes && it.returnType == found.returnType
+            }
+            m.addInstructionsWithLabels(
+                at + 1,
+                """
+                invoke-static {v$name}, $EXT/LibraryRebuild;->isHiddenFolder(Ljava/lang/String;)Z
+                move-result v$name
+                if-nez v$name, :eppy_skip_hidden
+                """,
+                ExternalLabel("eppy_skip_hidden", m.getInstruction(at + 2)),
+            )
+        }
 
         // A rebuild opens the library with an extra; the library then runs its own Full scan.
         if (libraryOnCreate != null) {
