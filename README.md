@@ -177,6 +177,11 @@ folder-sync app does the syncing. Why it's built this way: [docs/adr/0002](docs/
   in the book's folder. eppy offers whichever other device played the book most recently, phone, tablet or PC (*The PC
   is at …*). The PC never writes SABP's own file. Why: [docs/adr/0004](docs/adr/0004-pc-writes-its-own-position-file.md).
 - Not synced: listening statistics, transcripts made on the device itself, and eppy's settings.
+- **Reorganised the library folder** (books moved or renamed, on any device)? **Settings → Smart AudioBook Player →
+  Rebuild library** (v0.18.0) clears SABP's book list and runs its Full scan, so every book is added again from its
+  new folder, at the position in its `position.sabp.dat`. Bookmarks, characters and settings stay; each book's own
+  speed, equalizer, boost, skip start/end, repeat, date added and finished mark are lost. The Library tab offers it too
+  when Refresh finds missing or moved books.
 
 ## Privacy and permissions
 

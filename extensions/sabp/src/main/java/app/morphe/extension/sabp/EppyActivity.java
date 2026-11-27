@@ -1017,6 +1017,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
             Intent i = EppyBridge.PLAYER_ACTIVITY.equals(activityClass) ? EppyRoute.classicIntent(this)
                     : EppyBridge.activityIntent(this, activityClass);
             EppyDiag.log("route", "opening " + activityClass.substring(activityClass.lastIndexOf('.') + 1));
+            if (EppyBridge.LIBRARY_ACTIVITY.equals(activityClass)) LibraryRebuild.stopPlayerService();
             startActivity(i);
         } catch (ActivityNotFoundException | SecurityException e) {
             Toast.makeText(this, "Not available in this version", Toast.LENGTH_SHORT).show();

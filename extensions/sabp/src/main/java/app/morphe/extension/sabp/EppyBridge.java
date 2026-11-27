@@ -190,6 +190,17 @@ public final class EppyBridge {
     public static void setSkipStartEnd(Object service, Object settings) {
     }
 
+    /**
+     * Patched: what SABP's player does before its library opens: pause, save the book list, stop the
+     * service. Without it the running service later saves its old book list over the library's changes.
+     */
+    public static void exitPlayerService(Object service) {
+    }
+
+    /** Patched: SABP's library screen's ⋮ → Full scan (a LibraryActivity). */
+    public static void fullScan(Object libraryActivity) {
+    }
+
     /** Patched: which SABP targets the patch found, "name=ok;name=missing: why". */
     public static String hookReport() {
         return "";

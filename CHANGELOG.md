@@ -1,5 +1,16 @@
 # Release notes
 
+## v0.18.0: Rebuild library, and the library's own scan works again
+
+- **Fixed: books added or moved in the library folder didn't show, or showed up broken, even after SABP's Full scan.**
+  SABP's player keeps its own copy of the book list while it runs. Its classic player stops it before the library
+  opens; eppy didn't, so the running player later saved its old list over the scan's. eppy now does what the classic
+  player does: opening SABP's library manager pauses playback, saves and stops the player first.
+- **Rebuild library** (Settings → Smart AudioBook Player, and on the Library tab when Refresh finds missing or moved
+  books): clears SABP's book list and runs its Full scan, for a library folder that was reorganised. Positions come
+  back from each book's `position.sabp.dat`; bookmarks, characters and all settings stay. Lost: each book's own speed,
+  equalizer, volume boost, skip start/end, repeat, date added and finished mark. It always asks first.
+
 ## v0.17.0: the PC joins sync between devices
 
 - **The PC's position is offered too** (Sync between devices patch). The PC read-along userscript for Audiobookshelf

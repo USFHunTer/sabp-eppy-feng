@@ -43,7 +43,7 @@ What each SABP screen does while eppy is the chosen player interface.
 | SABP screen / entry | Opened from | Under eppy |
 |---|---|---|
 | `PlayerActivity` (classic player) | notification, widgets, library, voice search, task restore, Android Auto "open app" | **routed to eppy** by the `router` hook before any UI is built. Opened on purpose (eppy → More → Classic player) it shows normally, with **Switch to eppy** in its ⋮ menu |
-| `LibraryActivity` | classic player → Library | classic-only for folder management and full rescan; eppy has its own Library tab |
+| `LibraryActivity` | classic player → Library | classic-only for folder management and full rescan; eppy has its own Library tab. eppy stops the player service before opening it (`exitService`), as the classic player does; **Rebuild library** opens it with an extra that starts its Full scan (`fullScan`) |
 | `BookmarksActivity` | classic player | classic (native eppy screen planned in round F) |
 | `CharactersActivity` | classic player | classic (native screen planned in round F) |
 | `HistoryActivity` | classic ⋮ → History | classic (native screen planned in round F) |
@@ -82,6 +82,8 @@ listed in eppy → Settings → Diagnostics → Patch hooks with the feature tha
 | `speed` | optional | the only **public** `PlayerService (float, int) → void` | speed panel, tap cycle, `[`/`]` keys | SABP's speed toggle only |
 | `sleepRemaining` | optional | the `PlayerService () → String` that calls `PlayerSettingsSleepActivity` and `PlayerActivity`'s formatter | sleep countdown | no countdown |
 | `classicMenu` | optional | the `PlayerActivity` method that inflates and shows a `PopupMenu` | **Switch to eppy** in the classic ⋮ menu | app-icon shortcut only |
+| `exitService` | optional | the only `PlayerService () → void` that sends `ExitIntent` and calls `stopSelf` (what the classic player calls before opening the library: pause, save the book list, stop) | stop the player before SABP's library opens, Rebuild library | library opens with the player running (its old book list can overwrite the library's changes); no Rebuild |
+| `fullScan` | optional | the `LibraryActivity () → void` call `onOptionsItemSelected` makes right after reading `menu_full_scan`; plus a call injected at the start of `LibraryActivity.onCreate(Bundle)` | Rebuild library runs SABP's Full scan | no Rebuild |
 | `classicSettings` | optional | `PlayerSettingsActivity.onCreate`, after its first own-class call (the screen builder) | **Switch to eppy** row | app-icon shortcut only |
 
 Public, unobfuscated interfaces eppy also uses: PlayerService intent actions

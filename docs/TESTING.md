@@ -106,6 +106,21 @@ Driven through scrcpy.
 | Seek bar on a 33 h single-file book | **fail** → fixed in 0.8.1 (now per chapter) |
 
 
+## Device checklist: Rebuild library (v0.18.0, not yet on a device)
+
+Checked without a device: both targets resolve uniquely in SABP 11.7.8's dex (`PlayerService.o0`: the only
+`()V` with `ExitIntent` + `stopSelf`; `LibraryActivity.m0`: the call after `menu_full_scan` in
+`onOptionsItemSelected`); `LibraryRebuildTest` (only `BooksDatabase_v6` and its copy are deleted).
+
+On a device whose library folder was reorganised (the tablet, 2026-11-27):
+- Settings → Diagnostics → Patch hooks lists `exitService=ok` and `fullScan=ok`.
+- Settings → Smart AudioBook Player → **Rebuild library** → Rebuild: playback pauses, SABP's library opens and its
+  Full scan runs by itself. Back in eppy, the Library tab lists every book with its new folder name, and none twice.
+- A book with a `position.sabp.dat` opens at that position; bookmarks show.
+- Rotating the phone during the scan doesn't start a second scan.
+- Library manager (no rebuild): add a book folder, Full scan there, back to eppy: the book is listed and stays
+  listed after playing and pausing another book (the old list no longer overwrites it).
+
 ## Device checklist: Block Google billing logging (v0.15.0, not yet on a device)
 
 Verified without a device: SABP 11.7.8's APK has one `backend:` entry for Google's data transport (CCT), used by the

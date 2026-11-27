@@ -44,7 +44,8 @@ private const val BOOKMARK = "$SABP/Bookmark;"
 private const val CHARACTER = "$SABP/CharacterDescription;"
 private const val SLEEP_SETTINGS = "$SABP/PlayerSettingsSleepActivity;"
 private const val SETTINGS_ACTIVITY = "$SABP/PlayerSettingsActivity;"
-const val EPPY_VERSION = "0.17.0"
+private const val LIBRARY_ACTIVITY = "$SABP/LibraryActivity;"
+const val EPPY_VERSION = "0.18.0"
 private const val EPPY_ACTIVITY = "app.morphe.extension.sabp.EppyActivity"
 
 private fun newLauncherFilter(doc: org.w3c.dom.Document): Element =
@@ -218,6 +219,31 @@ private val eppyUiBytecodePatch = bytecodePatch(
         val setRepeat = hooks.optional("repeat") { serviceSetter("$SABP/RepeatSettings;", false) }
         val setSkipStartEnd = hooks.optional("skipStartEnd") { serviceSetter("$SABP/SkipStartEndSettings;", false) }
 
+        // Library: what the classic player calls before opening the library (pause, save the book list,
+        // broadcast ExitIntent, stopSelf), and the library screen's ⋮ → Full scan.
+        val exitService = hooks.optional("exitService") {
+            service.methods.filter { m ->
+                m.parameterTypes.isEmpty() && m.returnType == "V" && m.hasString("ak.alizandro.smartaudiobookplayer.ExitIntent") &&
+                    m.methodCalls().any { it.name == "stopSelf" }
+            }.singleOrNull()?.asReference()
+        }
+        val libraryActivity = classDefBy(LIBRARY_ACTIVITY)
+        val fullScan = hooks.optional("fullScan") {
+            val m = libraryActivity.methods.singleOrNull { it.name == "onOptionsItemSelected" }
+            val insns = m?.implementation?.instructions?.toList().orEmpty()
+            val menu = insns.indexOfFirst {
+                ((it as? ReferenceInstruction)?.reference as? com.android.tools.smali.dexlib2.iface.reference.FieldReference)?.name == "menu_full_scan"
+            }
+            if (menu < 0) null else insns.drop(menu).firstNotNullOfOrNull {
+                ((it as? ReferenceInstruction)?.reference as? MethodReference)?.takeIf { r ->
+                    r.definingClass == LIBRARY_ACTIVITY && r.parameterTypes.isEmpty() && r.returnType == "V"
+                }
+            }
+        }
+        val libraryOnCreate = if (fullScan == null) null else libraryActivity.methods.singleOrNull {
+            it.name == "onCreate" && it.parameterTypes.map(CharSequence::toString) == listOf("Landroid/os/Bundle;")
+        }
+
         // ---- mutate ------------------------------------------------------------------------
         val mService = mutableClassDefBy(PLAYER_SERVICE)
         mService.methods.single { it.name == "onCreate" && it.parameterTypes.isEmpty() }
@@ -288,7 +314,13 @@ private val eppyUiBytecodePatch = bytecodePatch(
         // Package-private targets must be public: the extension lives in another package.
         listOfNotNull(books, coverKeys, loadCovers, seekTracking, seekTo, filePosition, jump, loadBookmarks, saveBookmarks,
             loadCharacters, saveCharacters, setSpeed, sleepRemaining, setBoost, setId3, setEqualizer, setRepeat,
-            setSkipStartEnd).forEach { makeAccessible(it) }
+            setSkipStartEnd, exitService, fullScan).forEach { makeAccessible(it) }
+
+        // A rebuild opens the library with an extra; the library then runs its own Full scan.
+        if (libraryOnCreate != null) {
+            mutableClassDefBy(LIBRARY_ACTIVITY).methods.single { it.name == "onCreate" && it.parameterTypes == libraryOnCreate.parameterTypes }
+                .addInstructions(0, "invoke-static {p0, p1}, $EXT/LibraryRebuild;->onLibraryCreated(Landroid/app/Activity;Landroid/os/Bundle;)V")
+        }
 
         // Fill in the EppyBridge stubs for everything that resolved.
         val bridge = mutableClassDefBy(BRIDGE)
@@ -435,6 +467,24 @@ private val eppyUiBytecodePatch = bytecodePatch(
         objectSetter("setEqualizer", setEqualizer, "$SABP/EqualizerLevels;")
         objectSetter("setRepeat", setRepeat, "$SABP/RepeatSettings;")
         objectSetter("setSkipStartEnd", setSkipStartEnd, "$SABP/SkipStartEndSettings;")
+        exitService?.let {
+            stub("exitPlayerService").replaceBody(
+                """
+                check-cast p0, $PLAYER_SERVICE
+                invoke-virtual {p0}, ${it.smali()}
+                return-void
+                """,
+            )
+        }
+        fullScan?.let {
+            stub("fullScan").replaceBody(
+                """
+                check-cast p0, $LIBRARY_ACTIVITY
+                invoke-virtual {p0}, ${it.smali()}
+                return-void
+                """,
+            )
+        }
         stub("isLinked").replaceBody(
             """
             const/4 v0, 0x1

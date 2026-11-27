@@ -113,6 +113,11 @@ public final class SettingsPage {
         sabp.addView(Ui.linkRow(c, t, EppyIcon.TUNE, "Player settings", "Playback, skip intervals, sleep timer, statistics",
                 v -> host.pushPage(PlayerSettingsPage.KEY, null)));
         sabp.addView(link(EppyIcon.FOLDER, "Library manager", "Folders, finished books, covers, files", EppyBridge.LIBRARY_ACTIVITY));
+        if (app.morphe.extension.sabp.LibraryRebuild.available()) {
+            sabp.addView(Ui.linkRow(c, t, EppyIcon.RESET, "Rebuild library",
+                    "Clears the book list and scans the folders again, after books were moved or renamed",
+                    v -> LibraryPage.confirmRebuild(host)));
+        }
         sabp.addView(Ui.linkRow(c, t, EppyIcon.CHART, "Listening statistics", "Time listened per month and book", v -> host.pushPage(StatisticsPage.KEY, null)));
         sabp.addView(Ui.linkRow(c, t, EppyIcon.HISTORY, "History", "Recent books, undo accidental jumps", v -> host.pushPage(HistoryPage.KEY, null)));
         sabp.addView(Ui.linkRow(c, t, EppyIcon.PERSON, "Characters", "Names and notes for the playing book", v -> host.pushPage(CharactersPage.KEY, null)));

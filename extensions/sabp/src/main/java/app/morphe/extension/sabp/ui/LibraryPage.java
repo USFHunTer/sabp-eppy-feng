@@ -174,9 +174,26 @@ public final class LibraryPage {
         if (gone > 0) detail.append("Missing: ").append(join(r.missing, 4)).append('\n');
         if (r.hasChanges()) {
             showStatus(r.summary(), detail.toString().trim(), "Update with SABP's scan", false);
+            // Missing or moved books are what a reorganised library folder leaves behind.
+            if (!r.missing.isEmpty() && app.morphe.extension.sabp.LibraryRebuild.available()) {
+                LinearLayout box = (LinearLayout) status.getChildAt(0);
+                box.addView(Ui.textButton(c, t, "Rebuild library", v -> confirmRebuild(host)));
+            }
         } else {
             showStatus(r.summary(), r.error != null ? null : null, r.error != null ? "Open library folders" : null, false);
         }
+    }
+
+    /** Asks before clearing SABP's book list and rescanning (LibraryRebuild). */
+    public static void confirmRebuild(Host host) {
+        new Sheet(host.overlayRoot(), host.theme(), "Rebuild library?")
+                .item(EppyIcon.RESET, "Rebuild",
+                        "Playback stops, the book list is cleared and Smart AudioBook Player's Full scan adds every book again. "
+                                + "Positions, bookmarks, characters and settings stay. Lost: each book's own speed, equalizer, "
+                                + "volume boost, skip start/end, repeat, date added and finished mark.",
+                        () -> app.morphe.extension.sabp.LibraryRebuild.start(host.activity()))
+                .item(EppyIcon.CLOSE, "Cancel", null, null)
+                .show();
     }
 
     private static String join(List<String> items, int max) {
