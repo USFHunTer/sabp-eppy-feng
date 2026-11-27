@@ -500,6 +500,13 @@ public final class Transcriber {
         }
         ModelStore.Model m = model();
         if (!ModelStore.installed(app, m)) {
+            // A book whose transcript is already complete (imported from the PC) needs no model.
+            if (b.folderUri.equals(doneWithoutModel) || progressDone(b)) {
+                doneWithoutModel = b.folderUri; // transcripts only grow: done stays done
+                if (wholeBook(b.folderUri)) setWholeBook(b.folderUri, null, false);
+                set(State.DONE, "The whole book is transcribed");
+                return 60_000;
+            }
             set(State.NO_MODEL, "The speech model isn't downloaded");
             return 60_000;
         }
@@ -535,6 +542,8 @@ public final class Transcriber {
         if (!ok) return 30_000;
         return charging || whole ? 200 : Math.max(500, took); // ~50% duty cycle on battery
     }
+
+    private volatile String doneWithoutModel; // folder of a book found fully transcribed while the model is missing
 
     private boolean progressDone(EppyBook b) {
         for (EppyBook.FileItem f : b.files) {

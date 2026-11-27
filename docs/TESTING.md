@@ -118,6 +118,8 @@ On a device whose library folder was reorganised (the tablet, 2026-11-27):
   Full scan runs by itself. Back in eppy, the Library tab lists every book with its new folder name, and none twice.
 - A book with a `position.sabp.dat` opens at that position; bookmarks show.
 - Rotating the phone during the scan doesn't start a second scan.
+- Without the speech model downloaded, a book with a complete PC transcript (Shadow Slave 9) says *The whole book is
+  transcribed* in Read along, with no **Download speech model** button.
 - Library manager (no rebuild): add a book folder, Full scan there, back to eppy: the book is listed and stays
   listed after playing and pausing another book (the old list no longer overwrites it).
 

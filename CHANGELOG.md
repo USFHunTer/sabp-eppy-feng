@@ -10,6 +10,8 @@
   books): clears SABP's book list and runs its Full scan, for a library folder that was reorganised. Positions come
   back from each book's `position.sabp.dat`; bookmarks, characters and all settings stay. Lost: each book's own speed,
   equalizer, volume boost, skip start/end, repeat, date added and finished mark. It always asks first.
+- **Fixed: a book with a complete transcript (imported from the PC) asked for the speech model.** The model is only
+  for transcribing on the phone; such a book now says *The whole book is transcribed* and shows no download button.
 
 ## v0.17.0: the PC joins sync between devices
 

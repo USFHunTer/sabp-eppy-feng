@@ -505,7 +505,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
     private void addTranscriberActions() {
         if (tr.downloadProgress() >= 0) {
             addAction(Ui.chip(c, t, EppyIcon.CLOSE, "Cancel download", false, v -> tr.cancelDownload()));
-        } else if (!tr.modelReady()) {
+        } else if (!tr.modelReady() && tr.state() != Transcriber.State.DONE) { // a finished book doesn't need it
             addAction(Ui.chip(c, t, EppyIcon.DOWNLOAD, "Download speech model", false, v -> askDownload(null)));
         } else if (tr.stoppedAfterCrash()) {
             addAction(Ui.chip(c, t, EppyIcon.REFRESH, "Try again", false, v -> tr.resetCrashes()));
