@@ -1,5 +1,11 @@
 # Release notes
 
+## v0.18.3: the other device's place waits for you
+
+- **Changed: *Another device is at …* no longer disappears after 15 seconds.** It stays at the bottom until you tap
+  **Jump** or its new close button, so stepping away for a moment doesn't lose it. It goes by itself only if you
+  switch to another book (Jump would move the wrong one) or another message takes its place.
+
 ## v0.18.2: a transcript file from the PC is picked up without a restart
 
 - **Fixed: a `.transcript.json` that arrived while its book was open wasn't imported.** eppy looked for transcript

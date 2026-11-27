@@ -221,7 +221,7 @@ GitHub Packages); CI builds it.
 On two devices with Syncthing-Fork sharing the library folder (README setup) and the patch applied on both:
 1. Diagnostics shows "Sync between devices patch: on".
 2. Play a book on the tablet, pause, wait a minute. Open eppy on the phone: "Another device is at …" with Jump appears
-   once; Jump moves to the tablet's place, paused, with the phone's own speed.
+   once and stays until Jump or ✕ (or another book); Jump moves to the tablet's place, paused, with the phone's own speed.
 3. Leave eppy and come back: the same offer doesn't appear again. Play on the tablet again: a new offer appears.
 4. Play on the phone instead of jumping: the tablet then gets the phone's position as an offer.
 5. Within 30 s of each other: no offer. Without the patch: no offer and no file read.

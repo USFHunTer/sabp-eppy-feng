@@ -600,6 +600,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
     }
 
     private View undoBar;
+    private String offerFolder; // the book whose other-device offer undoBar shows, while it shows one
 
     @Override
     public void showUndo(String message, Runnable undo) {
@@ -611,10 +612,12 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         showMessage(message, actionLabel, undo, 6000);
     }
 
+    /** showMs 0: the bar stays, with a close button, until its action or the close is tapped. */
     private void showMessage(String message, String actionLabel, Runnable undo, long showMs) {
         if (undoBar != null) root.removeView(undoBar);
+        offerFolder = null;
         LinearLayout bar = Ui.row(this);
-        bar.setPadding(Ui.dp(this, 16), 0, Ui.dp(this, 8), 0);
+        bar.setPadding(Ui.dp(this, 16), 0, Ui.dp(this, showMs > 0 ? 8 : 0), 0);
         int inverse = theme.dark ? 0xFFE6E1E5 : 0xFF313033;
         int onInverse = theme.dark ? 0xFF313033 : 0xFFF4EFF4;
         bar.setBackground(Ui.rounded(inverse, Ui.dp(this, 8)));
@@ -640,7 +643,8 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
             undo.run();
             hide.run();
         });
-        handler.postDelayed(hide, showMs);
+        if (showMs > 0) handler.postDelayed(hide, showMs);
+        else bar.addView(Ui.iconButton(this, theme, EppyIcon.CLOSE, onInverse, 0, "Dismiss", v -> hide.run()));
     }
 
     // ---- the other device's position ("Sync between devices" patch) ------------------------------
@@ -650,6 +654,12 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
 
     /** Once per book per visit: offers the position another device left in the book folder (docs/adr/0002). */
     private void checkOtherDevice(EppyBook b) {
+        // The offer stays until tapped, so it goes when its book does: Jump must never move another book.
+        if (offerFolder != null && (b == null || !offerFolder.equals(b.folderUri)) && undoBar != null) {
+            root.removeView(undoBar);
+            undoBar = null;
+            offerFolder = null;
+        }
         // Also while playing: opening a book in eppy starts it, and the offer matters most right then.
         if (b == null || b.folderUri.equals(otherDeviceChecked) || !OtherDevicePosition.enabled(this)) return;
         if (player.filePositionSeconds() < 0) return;
@@ -700,7 +710,8 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         String ago = android.text.format.DateUtils.getRelativeTimeSpanString(there.lastPlayed, System.currentTimeMillis(),
                 android.text.format.DateUtils.MINUTE_IN_MILLIS).toString();
         showMessage((there.device != null ? "The " + there.device : "Another device") + " is at " + Ui.time(at * 1000) + ", " + ago, "Jump",
-                () -> player.jumpTo(there.fileName, there.seconds, player.isPlaying()), 15000);
+                () -> player.jumpTo(there.fileName, there.seconds, player.isPlaying()), 0);
+        offerFolder = b.folderUri;
     }
 
     private static final int REQ_DOC = 4711;
@@ -1134,6 +1145,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
             checkOtherDevice(b);
         } else {
             skipWatcher.reset();
+            checkOtherDevice(null); // takes down an offer whose book stopped
         }
         if (fsTab != null) fsTab.refresh(false);
         if (overlayPane != null) overlayPane.update(false);
