@@ -1,5 +1,7 @@
 # The PC only transcribes; the phone still matches, and the transcript file is eppy's own storage JSON
 
+> For read along on the PC, the PC now matches too (ADR 0003). On the phone this ADR still holds.
+
 Transcribing on the phone is slow (a 57-hour book takes days) and only moderately accurate, so a PC with a strong GPU can make the transcript instead. The PC does transcription only: it writes `<audio basename>.transcript.json` next to the audio file, in exactly the v1 JSON that `FileTranscript` already stores (`covered` = the whole file). The phone imports it as that file's transcript and keeps doing matching (TranscriptSync) and skipped passages as before. Using the phone's own format means import is "check name and length, then copy": the phone needs no new parser, and transcripts from either source behave the same.
 
 ## Considered Options

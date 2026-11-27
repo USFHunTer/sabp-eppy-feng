@@ -41,5 +41,5 @@ _Avoid_: reading mode, full-screen player.
 **Playback position**: where the listener is in the audiobook's audio: which audio file, and how far into it. It's the position the listener continues from on another device.
 _Avoid_: listening position (that is a document word), progress (too vague: it could also mean transcription progress or statistics).
 
-**Other device's position**: a playback position that another device saved in the book folder, more recent than this device's and more than 30 seconds away from it. eppy offers to jump to it, and never jumps without asking.
+**Other device's position**: a playback position that another device (phone, tablet or PC) saved in the book folder, more recent than this device's and more than 30 seconds away from it. When two other devices saved one, it's the more recently played. eppy offers to jump to it, and never jumps without asking.
 _Avoid_: synced progress, remote position.
