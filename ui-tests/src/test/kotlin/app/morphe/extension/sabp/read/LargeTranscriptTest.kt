@@ -72,7 +72,7 @@ class LargeTranscriptTest {
         text.index()
         val skipped = ArrayList<IntArray>()
         val t1 = System.nanoTime()
-        val chain = TranscriptSync.run(text, book, tr, HashMap(), { false }, skipped)!!
+        val chain = TranscriptSync.run(text, tr.parts(book), HashMap(), { false }, skipped)!!
         val syncMs = (System.nanoTime() - t1) / 1_000_000
 
         println("LargeTranscriptTest: ${words} words, ${segs.size} segments, file %.1f MB".format(file.length() / 1_048_576.0))

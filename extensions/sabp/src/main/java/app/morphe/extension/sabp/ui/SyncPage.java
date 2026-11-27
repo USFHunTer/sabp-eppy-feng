@@ -190,7 +190,9 @@ public final class SyncPage extends Page {
                 String when = DateUtils.getRelativeTimeSpanString(there.lastPlayed, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString();
                 boolean mine = savedHere != null && savedHere == there.lastPlayed;
                 s = "Saved position in the book's folder: " + Ui.time(at * 1000) + ", " + when
-                        + (mine ? ", saved by this device." : savedHere == null ? "." : ", from the other device: check the other device to jump there.");
+                        + (mine ? ", saved by this device."
+                        : there.device != null ? ", saved by the " + there.device + ": check the other device to jump there."
+                        : savedHere == null ? "." : ", from the other device: check the other device to jump there.");
             }
             status.post(() -> status.setText(s));
         }, "eppy-sync").start();

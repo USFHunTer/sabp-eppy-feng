@@ -766,7 +766,7 @@ public final class ReadAlong {
                 }
                 int before = tsCache.size();
                 List<int[]> sk = new ArrayList<>();
-                List<Alignment.Anchor> chain = TranscriptSync.run(t, b, tr, tsCache, () -> gen != tsGeneration, sk);
+                List<Alignment.Anchor> chain = TranscriptSync.run(t, tr.parts(b), tsCache, () -> gen != tsGeneration, sk);
                 if (chain == null) return;
                 if (tsCache.size() != before) write(cf, TranscriptSync.toJson(tsCache).toString());
                 main.post(() -> {

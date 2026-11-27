@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import app.morphe.extension.sabp.EppyBook;
 
 /**
  * Lines the on-device transcript up with the paired EPUB/PDF. The book is used as a reference,
@@ -37,6 +36,19 @@ final class TranscriptSync {
         boolean cancelled();
     }
 
+    /** One audio file of the book: its name, where it starts in the book (seconds) and its transcript (or null). */
+    static final class Part {
+        final String name;
+        final double start;
+        final FileTranscript transcript;
+
+        Part(String name, double start, FileTranscript transcript) {
+            this.name = name;
+            this.start = start;
+            this.transcript = transcript;
+        }
+    }
+
     private TranscriptSync() {
     }
 
@@ -45,13 +57,12 @@ final class TranscriptSync {
      * "no match") and returns the chained anchors. Skipped passages ({first, last} text word) are
      * added to {@code skipped}. Returns null if cancelled.
      */
-    static List<Alignment.Anchor> run(BookText text, EppyBook b, Transcriber tr, Map<String, double[]> cache, Cancel cancel, List<int[]> skipped) {
+    static List<Alignment.Anchor> run(BookText text, List<Part> parts, Map<String, double[]> cache, Cancel cancel, List<int[]> skipped) {
         List<Cand> cands = new ArrayList<>();
         ArrayList<String> heard = new ArrayList<>();
         Cand prev = null;
-        for (EppyBook.FileItem f : b.files) {
-            if (f.start < 0) continue;
-            FileTranscript ft = tr.transcript(b.folderUri, f.name);
+        for (Part f : parts) {
+            FileTranscript ft = f.transcript;
             if (ft == null) continue;
             List<FileTranscript.Word> words = ft.words();
             ArrayList<String> chunk = new ArrayList<>();

@@ -15,21 +15,32 @@ import java.lang.reflect.Field;
 /**
  * The other device's position: SABP's {@code position.sabp.dat} in the book folder, last written by whichever
  * device played the book last and brought here by a folder-sync app (docs/adr/0002). SABP only reads that file for
- * a book new to its library, so eppy reads it and offers the jump. Part of the "Sync between devices" patch.
+ * a book new to its library, so eppy reads it and offers the jump. The PC (Audiobookshelf with the PC read-along
+ * helper) writes its own {@code position.pc.json} instead (docs/adr/0004); of the two, the more recently played one
+ * that another device wrote is offered. Part of the "Sync between devices" patch.
  */
 public final class OtherDevicePosition {
     public static final String FILE = "position.sabp.dat";
+    /** The PC's position: {"v":1,"file":"<audio file name>","seconds":<int>,"lastPlayed":<epoch ms>}. */
+    public static final String PC_FILE = "position.pc.json";
     static final int MIN_GAP_SECONDS = 30;
     private static final String SABP = "ak.alizandro.smartaudiobookplayer.";
 
     public final String fileName;
     public final int seconds;
     public final long lastPlayed;
+    /** "PC" for the PC's file, null for SABP's file (written by a phone or tablet). */
+    public final String device;
 
     OtherDevicePosition(String fileName, int seconds, long lastPlayed) {
+        this(fileName, seconds, lastPlayed, null);
+    }
+
+    OtherDevicePosition(String fileName, int seconds, long lastPlayed, String device) {
         this.fileName = fileName;
         this.seconds = seconds;
         this.lastPlayed = lastPlayed;
+        this.device = device;
     }
 
     /** True when the "Sync between devices" patch is applied. */
@@ -71,17 +82,48 @@ public final class OtherDevicePosition {
         }
     }
 
-    /** Reads the book folder's position file; null when there is none or it can't be read. Not on the main thread. */
+    /**
+     * The book folder's position to compare with this device: see {@link #pick}. Null when there is none or it can't be
+     * read. Not on the main thread.
+     */
     public static OtherDevicePosition read(Context c, String folderUri) {
-        Uri uri = app.morphe.extension.sabp.read.SpeechSync.fileUri(folderUri, FILE);
+        return pick(readFile(c, folderUri, FILE), readFile(c, folderUri, PC_FILE), savedHere(c, folderUri));
+    }
+
+    /**
+     * The more recently played of SABP's file (unless this device wrote it) and the PC's file (unless this device has
+     * saved since). With neither, SABP's file, so {@link #compare} can still say it's this device's own.
+     */
+    static OtherDevicePosition pick(OtherDevicePosition sabp, OtherDevicePosition pc, Long savedHere) {
+        boolean sabpOther = sabp != null && sabp.fileName != null && (savedHere == null || sabp.lastPlayed != savedHere);
+        boolean pcOther = pc != null && pc.fileName != null && (savedHere == null || pc.lastPlayed > savedHere);
+        return pcOther && (!sabpOther || pc.lastPlayed > sabp.lastPlayed) ? pc : sabp;
+    }
+
+    private static OtherDevicePosition readFile(Context c, String folderUri, String name) {
+        Uri uri = app.morphe.extension.sabp.read.SpeechSync.fileUri(folderUri, name);
         try (InputStream in = "file".equals(uri.getScheme()) ? new FileInputStream(uri.getPath()) : c.getContentResolver().openInputStream(uri)) {
-            return in != null ? parse(in) : null;
+            return in == null ? null : FILE.equals(name) ? parse(in) : parsePc(in);
         } catch (FileNotFoundException e) {
             return null;
         } catch (Throwable t) {
-            EppyDiag.log("sync", "position file unreadable: " + t.getClass().getSimpleName());
+            EppyDiag.log("sync", name + " unreadable: " + t.getClass().getSimpleName());
             return null;
         }
+    }
+
+    /** Parses the PC's position file; null if it isn't one this version knows. */
+    static OtherDevicePosition parsePc(InputStream in) throws Exception {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int r;
+        while ((r = in.read(buf)) > 0 && out.size() < 65536) out.write(buf, 0, r);
+        org.json.JSONObject o = new org.json.JSONObject(out.toString("UTF-8"));
+        if (o.optInt("v", 0) != 1) return null;
+        String file = o.optString("file", "");
+        long at = o.optLong("lastPlayed", 0);
+        if (file.isEmpty() || at <= 0) return null;
+        return new OtherDevicePosition(file, Math.max(0, o.optInt("seconds", 0)), at, "PC");
     }
 
     /** Parses SABP's BookDataBackup (Java serialization), or returns null if the file holds something else. */

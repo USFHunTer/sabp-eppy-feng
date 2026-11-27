@@ -58,4 +58,30 @@ class OtherDevicePositionTest {
         assertEquals("no save recorded yet: the place decides", OtherDevicePosition.OFFER, cmp(there("a.mp3", 900, 500), null))
         assertEquals("no file", OtherDevicePosition.NONE, cmp(null))
     }
+
+    @Test
+    fun readsThePcsPositionFile() {
+        fun pc(json: String) = OtherDevicePosition.parsePc(ByteArrayInputStream(json.toByteArray()))
+        val p = pc("""{"v":1,"file":"Part 2.m4b","seconds":3725,"lastPlayed":1700000000000}""")!!
+        assertEquals("Part 2.m4b", p.fileName)
+        assertEquals(3725, p.seconds)
+        assertEquals("PC", p.device)
+        assertNull("unknown version", pc("""{"v":2,"file":"a.mp3","seconds":1,"lastPlayed":5}"""))
+        assertNull("no file", pc("""{"v":1,"seconds":1,"lastPlayed":5}"""))
+    }
+
+    @Test
+    fun picksTheMostRecentlyPlayedOtherPosition() {
+        val saved = 1_000L // this device's last save of position.sabp.dat
+        val mine = there("a.mp3", 10, saved)
+        val tablet = there("a.mp3", 20, 3_000)
+        fun pc(at: Long) = OtherDevicePosition("a.mp3", 30, at, "PC")
+        assertEquals("PC newer than the tablet", 30, OtherDevicePosition.pick(tablet, pc(4_000), saved)!!.seconds)
+        assertEquals("tablet newer than the PC", 20, OtherDevicePosition.pick(tablet, pc(2_000), saved)!!.seconds)
+        assertEquals("only the PC played since this device saved", 30, OtherDevicePosition.pick(mine, pc(2_000), saved)!!.seconds)
+        assertEquals("PC older than this device's save: this device's own", OtherDevicePosition.MINE,
+            OtherDevicePosition.compare("a.mp3", 10, saved, OtherDevicePosition.pick(mine, pc(500), saved)))
+        assertEquals("no SABP file", 30, OtherDevicePosition.pick(null, pc(2_000), null)!!.seconds)
+        assertNull("nothing", OtherDevicePosition.pick(null, null, null))
+    }
 }

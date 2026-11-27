@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -368,6 +367,15 @@ public final class Transcriber {
         return String.format(Locale.US, "%.1f%%", Math.floor(1000.0 * pr[0] / pr[1]) / 10);
     }
 
+    /** The book's files whose start is known, with their transcripts (null where there is none), for TranscriptSync. */
+    List<TranscriptSync.Part> parts(EppyBook b) {
+        ArrayList<TranscriptSync.Part> out = new ArrayList<>();
+        for (EppyBook.FileItem f : b.files) {
+            if (f.start >= 0) out.add(new TranscriptSync.Part(f.name, f.start, transcript(b.folderUri, f.name)));
+        }
+        return out;
+    }
+
     public FileTranscript transcript(String folderUri, String fileName) {
         return FileTranscript.load(dir(folderUri), fileName);
     }
@@ -382,7 +390,7 @@ public final class Transcriber {
     }
 
     File dir(String folderUri) {
-        return new File(new File(app.getFilesDir(), "eppy_readalong/asr"), sha1(folderUri));
+        return new File(new File(app.getFilesDir(), "eppy_readalong/asr"), FileTranscript.sha1(folderUri));
     }
 
     // ---- worker -----------------------------------------------------------------------------------
@@ -895,14 +903,4 @@ public final class Transcriber {
         return pm != null && pm.getCurrentThermalStatus() >= PowerManager.THERMAL_STATUS_MODERATE;
     }
 
-    static String sha1(String s) {
-        try {
-            byte[] h = MessageDigest.getInstance("SHA-1").digest(s.getBytes(StandardCharsets.UTF_8));
-            StringBuilder b = new StringBuilder();
-            for (int i = 0; i < 10; i++) b.append(String.format("%02x", h[i]));
-            return b.toString();
-        } catch (Exception e) {
-            return Integer.toHexString(s.hashCode());
-        }
-    }
 }

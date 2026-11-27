@@ -35,7 +35,7 @@ class PcImportMatchTest {
         text.index()
 
         val skipped = ArrayList<IntArray>()
-        val chain = TranscriptSync.run(text, book, tr, HashMap(), { false }, skipped)!!
+        val chain = TranscriptSync.run(text, tr.parts(book), HashMap(), { false }, skipped)!!
         assertTrue("matched passages: ${chain.size / 2}", chain.size >= 2 * 10)
 
         // Where the omitted words are in the document.

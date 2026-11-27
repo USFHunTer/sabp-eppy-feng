@@ -699,7 +699,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         long at = (f != null && f.start >= 0 ? f.start : 0) + there.seconds;
         String ago = android.text.format.DateUtils.getRelativeTimeSpanString(there.lastPlayed, System.currentTimeMillis(),
                 android.text.format.DateUtils.MINUTE_IN_MILLIS).toString();
-        showMessage("Another device is at " + Ui.time(at * 1000) + ", " + ago, "Jump",
+        showMessage((there.device != null ? "The " + there.device : "Another device") + " is at " + Ui.time(at * 1000) + ", " + ago, "Jump",
                 () -> player.jumpTo(there.fileName, there.seconds, player.isPlaying()), 15000);
     }
 

@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -126,7 +127,7 @@ public final class FileTranscript {
     private static final HashMap<String, Object[]> cache = new HashMap<>(); // path -> {lastModified, transcript}
 
     static File fileFor(File dir, String name) {
-        return new File(dir, Transcriber.sha1(name) + ".json");
+        return new File(dir, sha1(name) + ".json");
     }
 
     static FileTranscript load(File dir, String name) {
@@ -210,6 +211,17 @@ public final class FileTranscript {
                 cache.put(f.getPath(), new Object[]{f.lastModified(), this});
             }
         } catch (Throwable ignored) {
+        }
+    }
+
+    static String sha1(String s) {
+        try {
+            byte[] h = MessageDigest.getInstance("SHA-1").digest(s.getBytes(StandardCharsets.UTF_8));
+            StringBuilder b = new StringBuilder();
+            for (int i = 0; i < 10; i++) b.append(String.format("%02x", h[i]));
+            return b.toString();
+        } catch (Exception e) {
+            return Integer.toHexString(s.hashCode());
         }
     }
 }

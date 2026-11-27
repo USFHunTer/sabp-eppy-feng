@@ -47,7 +47,7 @@ class SkipAuditTest {
                 Uri.fromFile(epub), epub.name)
         val skipped = ArrayList<IntArray>()
         val t0 = System.nanoTime()
-        val anchors = TranscriptSync.run(text, book, tr, HashMap(), { false }, skipped)!!
+        val anchors = TranscriptSync.run(text, tr.parts(book), HashMap(), { false }, skipped)!!
         val runMs = (System.nanoTime() - t0) / 1_000_000
 
         val heard = ft.words()

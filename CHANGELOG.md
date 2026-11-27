@@ -1,5 +1,14 @@
 # Release notes
 
+## v0.17.0: the PC joins sync between devices
+
+- **The PC's position is offered too** (Sync between devices patch). The PC read-along userscript for Audiobookshelf
+  (a separate project) saves where the PC is as `position.pc.json` in the book's folder. When you open a book, eppy
+  offers whichever other device played it most recently, the PC or the other phone or tablet, as *The PC is at …* or
+  *Another device is at …*. It still never jumps without asking. SABP's own position file is never written by the PC.
+- Under the hood: the EPUB reader and the transcript matching no longer depend on Android, so the PC builds the very
+  same code (docs/adr/0003). Nothing changes on the phone.
+
 ## v0.16.3: the other device's position now shows up
 
 - **Fixed: the offer never appeared.** SABP marks a book as "played now" the moment it's opened, so eppy always

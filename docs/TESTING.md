@@ -225,6 +225,13 @@ v0.16.3 (fix, not yet on a device): the offer never appeared in v0.16.0–v0.16.
 device; open the book (or More → Check the other device) on the other: the offer appears, also while it plays. Note:
 the first save on each device after updating is what teaches eppy which file is its own.
 
+v0.17.0 (not yet on a device): `OtherDevicePositionTest` also reads the PC's `position.pc.json` (refusing another
+format version or a missing file name) and picks the most recently played other position: the PC's when it's newer than
+the other device's, never the PC's when this device saved after it. The EPUB reader moved from `DocExtractor` into the
+plain-Java `Epub` and `TranscriptSync` now takes a plain file list (docs/adr/0003); the read-along tests pass
+unchanged. On a device: pause on the PC (Audiobookshelf with the PC read-along userscript), open the book on the
+phone: *The PC is at …* with Jump; play on the phone, then reopen: no PC offer until the PC plays again.
+
 **On a device (2026-11-26, v0.16.3):** with Syncthing-Fork sharing the library folder between a tablet and a phone,
 playing and pausing on the tablet made the phone offer "Another device is at …" when the book was opened. The
 other direction, Jump itself and "Paired with" were set up but not reported on separately.

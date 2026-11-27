@@ -173,6 +173,9 @@ folder-sync app does the syncing. Why it's built this way: [docs/adr/0002](docs/
   SABP reads the position file when it first adds a book.
 - Bookmarks and character notes need nothing: SABP reads them from the folder each time. If both devices change the
   same book's bookmarks before syncing, the newer file wins; Syncthing keeps the other as a `.sync-conflict` file.
+- **The PC** (v0.17.0): the PC read-along userscript for Audiobookshelf saves the PC's position as `position.pc.json`
+  in the book's folder. eppy offers whichever other device played the book most recently, phone, tablet or PC (*The PC
+  is at …*). The PC never writes SABP's own file. Why: [docs/adr/0004](docs/adr/0004-pc-writes-its-own-position-file.md).
 - Not synced: listening statistics, transcripts made on the device itself, and eppy's settings.
 
 ## Privacy and permissions

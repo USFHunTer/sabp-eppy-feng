@@ -47,10 +47,10 @@ final class Xhtml {
                     heading = !closing && name.length() == 2 && name.charAt(0) == 'h' && Character.isDigit(name.charAt(1));
                 }
                 if (!closing) {
-                    String id = DocExtractor.attr("<" + tag + ">", "id");
+                    String id = Epub.attr("<" + tag + ">", "id");
                     if (id != null) anchors.put(docPath + "#" + id, new int[]{out.paras.size(), para.length()});
                     if (name.equals("img")) {
-                        String alt = DocExtractor.attr("<" + tag + ">", "alt");
+                        String alt = Epub.attr("<" + tag + ">", "alt");
                         if (alt != null && alt.length() > 2) para.append(' ');
                     }
                 }
