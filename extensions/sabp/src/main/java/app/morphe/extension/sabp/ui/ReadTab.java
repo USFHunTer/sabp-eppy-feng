@@ -639,6 +639,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
         if (full) {
             EppyPlayer p = host.player();
             if (p.book() != null) ra.openBook(p.book().folderUri);
+            ra.refreshTranscriptMatches();
             rebuild();
             return;
         }

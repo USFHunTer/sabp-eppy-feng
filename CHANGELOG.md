@@ -1,5 +1,12 @@
 # Release notes
 
+## v0.18.2: a transcript file from the PC is picked up without a restart
+
+- **Fixed: a `.transcript.json` that arrived while its book was open wasn't imported.** eppy looked for transcript
+  files only when it loaded the book's document, so a file synced from the PC after that stayed unread until the app
+  restarted or you switched books, and the Read tab kept saying "Estimated". Opening the Read along tab now looks for
+  new transcript files too (only a file newer than the last import is read).
+
 ## v0.18.1: hidden folders are never books
 
 - **Fixed: old copies kept by Syncthing showed up as duplicate books.** With File Versioning on, Syncthing keeps

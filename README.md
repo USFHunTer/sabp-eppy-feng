@@ -133,8 +133,8 @@ the transcript instead, and eppy imports it; matching and skipped passages still
    takes about 37 minutes.
 3. **Copy** the `.transcript.json` files into the book's folder on the phone (next to its audio files).
 4. **Open the book in eppy** (its EPUB or text PDF must be paired). eppy imports the files when it loads the book's
-   document ("Imported transcript for N file(s)"), switches transcription on for the book and shows 100%. If the book
-   was already open, switch to another book and back, or restart the app.
+   document or when you open the Read along tab ("Imported transcript for N file(s)"), switches transcription on for
+   the book and shows 100%. A file that arrives while the book is open is picked up the next time you open the tab.
 
 More detail: [tools/pc-transcribe/README.md](tools/pc-transcribe/README.md).
 

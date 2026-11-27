@@ -695,8 +695,12 @@ public final class ReadAlong {
         return transcriptPassages;
     }
 
-    /** Re-matches the transcript now (the Read tab calls this when it opens). */
+    /**
+     * Imports transcript files that arrived since the document loaded (e.g. synced from the PC while the
+     * book was open), then re-matches the transcript. The Read tab calls this when it opens.
+     */
     public void refreshTranscriptMatches() {
+        importCheck = true;
         scheduleTranscriptSync(300);
     }
 
