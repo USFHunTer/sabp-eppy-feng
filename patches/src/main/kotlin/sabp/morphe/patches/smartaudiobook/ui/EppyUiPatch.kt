@@ -245,10 +245,9 @@ private val eppyUiBytecodePatch = bytecodePatch(
         }
         // SABP's folder lister (the Full scan walks folders with it): for each subfolder it does
         // `list.add(new Item(name))` and goes back to its loop, hidden folders included, so Syncthing's
-        // .stversions copies became books. Found by the two strings only it has (g7.F in 11.7.8), by
-        // walking the classes themselves: classDefByStrings' index came back without it on a phone
-        // patched with Morphe Manager (2026-11-28) though stock 11.7.8 has it. Each step that can miss
-        // throws its own message, which Diagnostics → Patch hooks shows.
+        // .stversions copies became books. Found by the two strings only it has (g7.F in 11.7.8). Each step
+        // that can miss throws its own message, which Diagnostics → Patch hooks shows: that is how the
+        // goto check below was found to have never matched (v0.18.1–v0.19.1).
         val folderAdd = hooks.optional("skipHiddenFolders") {
             fun Method.listsFolders() = hasString("vnd.android.document/directory") && hasString("info.txt")
             val m = classDefByOrNull { c -> c.methods.any { it.listsFolders() } }
@@ -265,7 +264,13 @@ private val eppyUiBytecodePatch = bytecodePatch(
             }
             val at = adds.singleOrNull() ?: error("${adds.size} `new Item(name)` + add in ${m.definingClass}->${m.name}")
             val name = (insns[at] as com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction35c).registerD
-            check(insns.getOrNull(at + 2)?.opcode?.name?.startsWith("GOTO") == true) { "no goto after the folder add" }
+            // Compare opcodes, not `opcode.name`: that is dexlib2's smali spelling ("goto"), not the enum's name.
+            val gotos = setOf(
+                com.android.tools.smali.dexlib2.Opcode.GOTO,
+                com.android.tools.smali.dexlib2.Opcode.GOTO_16,
+                com.android.tools.smali.dexlib2.Opcode.GOTO_32,
+            )
+            check(insns.getOrNull(at + 2)?.opcode in gotos) { "no goto after the folder add" }
             check(name < 16) { "folder name in v$name" }
             Triple(m, at, name)
         }
