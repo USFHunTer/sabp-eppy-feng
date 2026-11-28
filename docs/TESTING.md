@@ -176,6 +176,24 @@ On the phone, with a book that has a paired EPUB and a transcript:
 9. Same in full screen. On the home screen: the notice with Read, which opens the passage.
 10. Seek over a skipped passage: no bar, no notice.
 
+## Device checklist: pause at skipped passages (v0.19.0, not yet on a device)
+
+Verified without a device: `SkipPauseTest` (switch off or a passage under the minimum only offers; otherwise pauses)
+and `SkipWatcherTest`.
+
+On the phone, with a book that has a paired EPUB, a transcript and skipped passages:
+1. Read tab ⋮ → Pause at skipped passages shows Off; choose Every skipped passage. On Android 13+ it asks for
+   notifications once. The ⋮ item now says "On · every passage".
+2. Read tab open: at a crossing playback pauses, the text jumps to the passage, the bar says "Paused at a skipped
+   passage · N words" with Play. Play resumes where the narration carries on.
+3. Full screen: the same. Home screen: playback pauses and a bar with Read stays until tapped; Read opens the passage
+   with the Play bar.
+4. eppy in the background (another app in front): playback pauses, the notification sounds and vibrates. Play resumes
+   and the notification goes. Again, then Read: eppy opens on the Read tab at the passage.
+5. Screen off, phone locked: the same pause and notification.
+6. Swipe eppy away from recents and start playback from the notification or a headset: crossings still pause.
+7. Minimum 50: a passage under 50 words only gets the 8-second offer. Off: everything as in v0.18.
+
 ## Device checklist: transcripts made on the PC (v0.12.0, not yet on a device)
 
 Verified without a device: the tool on an RTX 4090 (one volume of a test book, 56.9 h, in 37 min;

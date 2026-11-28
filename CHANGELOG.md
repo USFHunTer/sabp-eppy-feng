@@ -1,5 +1,14 @@
 # Release notes
 
+## v0.19.0: pause at skipped passages
+
+- **New: Pause at skipped passages** (Read tab ⋮). When playback runs past a passage of the book that isn't in the
+  audiobook, eppy pauses instead of only offering to, so you can read it while you're busy with something else. On
+  the Read tab or in full screen the text jumps to the passage with a **Play** button; elsewhere in eppy a bar with
+  **Read** stays until you tap it; with eppy in the background or the screen off, a notification (sound and
+  vibration, its own *Skipped passages* channel) has **Play** and **Read**. Choose every passage, or only passages of
+  50, 100 or 200+ words; smaller ones still get the 8-second offer. It's one switch for the phone, for every book.
+
 ## v0.18.3: the other device's place waits for you
 
 - **Changed: *Another device is at …* no longer disappears after 15 seconds.** It stays at the bottom until you tap

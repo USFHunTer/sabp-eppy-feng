@@ -67,6 +67,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
     private final View fsButton;
     private final LinearLayout skipBar;
     private boolean skipPaused;
+    private long skipPausedAt;
     private final Transcriber.Listener trListener = this::onTranscriberChanged;
     private final Runnable hideSkip = () -> {
         if (!skipPaused) hideSkipBar();
@@ -178,24 +179,66 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
 
     // ---- skipped-passage crossings --------------------------------------------------------------
 
-    /** Playback just ran into a skipped passage: offer to pause for 8 seconds. */
-    public void onSkipCrossed(int[] sk) {
+    /**
+     * Playback just ran into a skipped passage: offer to pause for 8 seconds, or, when "Pause at
+     * skipped passages" already paused (paused), show the passage with the Play bar.
+     */
+    public void onSkipCrossed(int[] sk, boolean paused) {
         if (text == null || transcriptMode) return;
-        skipPaused = false;
         int n = sk[1] - sk[0] + 1;
+        if (paused) {
+            showPaused(sk, "Paused at a skipped passage · " + n + " words not in the audiobook");
+            root.announceForAccessibility("Paused at a skipped passage, " + n + " words not in the audiobook");
+            return;
+        }
+        skipPaused = false;
         showSkipBar("Skipped passage · " + n + " words not in the audiobook", EppyIcon.PAUSE, "Pause", v -> {
             if (host.player().isPlaying()) host.player().playPause();
-            skipPaused = true;
-            root.removeCallbacks(hideSkip);
-            scrollToPassage(sk);
-            showSkipBar("Paused to read the skipped passage", EppyIcon.PLAY, "Play", w -> {
-                if (!host.player().isPlaying()) host.player().playPause();
-                hideSkipBar();
-            });
+            showPaused(sk, "Paused to read the skipped passage");
         });
         root.announceForAccessibility("Skipped passage, " + n + " words not in the audiobook");
         root.removeCallbacks(hideSkip);
         root.postDelayed(hideSkip, 8000);
+    }
+
+    /** Paused at a passage (the notification's Read): the passage with the Play bar, once the text is there. */
+    public void showPaused(int[] sk) {
+        showPausedWhenReady(sk, 20);
+    }
+
+    private void showPausedWhenReady(int[] sk, int tries) {
+        if (text == null && tries > 0) root.postDelayed(() -> showPausedWhenReady(sk, tries - 1), 250);
+        else onSkipCrossed(sk, true);
+    }
+
+    /** "Pause at skipped passages": off, or the smallest passage that pauses. */
+    private void skipPauseSheet() {
+        int cur = app.morphe.extension.sabp.read.SkipPause.minWords(c);
+        Sheet sh = new Sheet(host.overlayRoot(), t, "Pause at skipped passages");
+        for (int m : app.morphe.extension.sabp.read.SkipPause.CHOICES) {
+            String sub = m == app.morphe.extension.sabp.read.SkipPause.OFF ? "Only offers to pause, for 8 seconds"
+                    : m == 0 ? "Pauses and tells you, even in the background" : null;
+            sh.item(m == cur ? EppyIcon.CHECK : 0, app.morphe.extension.sabp.read.SkipPause.label(m), sub, () -> {
+                // Without it the paused notification is hidden on Android 13+.
+                if (m != app.morphe.extension.sabp.read.SkipPause.OFF && android.os.Build.VERSION.SDK_INT >= 33
+                        && c.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    host.activity().requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 0x7EA1);
+                }
+                app.morphe.extension.sabp.read.SkipPause.setMinWords(c, m);
+            });
+        }
+        sh.show();
+    }
+
+    private void showPaused(int[] sk, String msg) {
+        skipPaused = true;
+        skipPausedAt = SystemClock.elapsedRealtime();
+        root.removeCallbacks(hideSkip);
+        scrollToPassage(sk);
+        showSkipBar(msg, EppyIcon.PLAY, "Play", w -> {
+            if (!host.player().isPlaying()) host.player().playPause();
+            hideSkipBar();
+        });
     }
 
     /** Scrolls to the start of a skipped passage (the notice's Read action). */
@@ -644,7 +687,8 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
             return;
         }
         if (text == null) return;
-        if (skipPaused && host.player().isPlaying()) hideSkipBar();
+        // The pause command takes a moment to land: don't read "still playing" as "played again".
+        if (skipPaused && host.player().isPlaying() && SystemClock.elapsedRealtime() - skipPausedAt > 1500) hideSkipBar();
         double pos = host.player().bookPositionSeconds();
         if (pos < 0) return;
         int u = ra.unitAt(pos);
@@ -960,6 +1004,7 @@ public final class ReadTab implements PlayerSheet.Tab, ReadAlong.Listener {
             sh.show();
             return;
         }
+        sh.item(EppyIcon.PAUSE, "Pause at skipped passages", app.morphe.extension.sabp.read.SkipPause.describe(app.morphe.extension.sabp.read.SkipPause.minWords(c)), this::skipPauseSheet);
         sh.item(EppyIcon.HISTORY, "Forget matches", "Keeps the file and chapter alignment; removes listening matches and manual corrections", ra::clearMatches);
         sh.item(EppyIcon.LIST, "Rebuild from scratch", "Re-reads the document and aligns again", ra::rebuild);
         sh.item(EppyIcon.CLOSE, "Remove pairing", "Removes the link and cached text. The audiobook and the file are untouched", ra::unpair);

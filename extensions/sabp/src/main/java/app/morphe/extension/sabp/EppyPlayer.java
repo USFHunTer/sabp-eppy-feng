@@ -214,6 +214,12 @@ public final class EppyPlayer {
         }
     }
 
+    /** Reattaches to SABP's media session without the UI (the skipped-passage watcher); true when attached. */
+    public boolean keepSession() {
+        attach();
+        return controller != null;
+    }
+
     private void detachController() {
         if (controller != null) {
             try {

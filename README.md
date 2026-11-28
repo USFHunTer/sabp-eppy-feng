@@ -103,6 +103,8 @@ a pairing, eppy leaves that book alone until you pick a document again.
 - **Skipped passages while you listen:** when playback reaches one, the Read tab shows "Skipped passage · N words not in
   the audiobook" with a **Pause** button for 8 seconds. Pause scrolls to the passage and leaves a **Play** button until
   you're done reading. Elsewhere in eppy a short notice appears with a **Read** action that opens the passage.
+  **Pause at skipped passages** (Read tab ⋮) pauses there instead, for every passage or only those of 50, 100 or 200+
+  words, and tells you even with eppy in the background or the screen off (a notification with Play and Read).
 - **Read chip:** the first chip under the player controls. Tap opens the Read tab; long-press opens full-screen reading.
 - **Full-screen reading:** the ⛶ button in the Read tab (or long-press the Read chip) shows the text over the whole
   screen with a mini player at the bottom (rewind, play/pause, forward). The screen stays on and the system bars hide

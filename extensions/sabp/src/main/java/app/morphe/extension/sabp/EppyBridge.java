@@ -67,6 +67,7 @@ public final class EppyBridge {
     public static void onPlayerServiceCreated(Service service) {
         playerService = new WeakReference<>(service);
         notifyServiceListeners();
+        app.morphe.extension.sabp.read.SkipPause.start(service);
     }
 
     /** Injected at the start of PlayerService.onDestroy(). */

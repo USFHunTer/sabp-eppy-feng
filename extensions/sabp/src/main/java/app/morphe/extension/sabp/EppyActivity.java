@@ -100,6 +100,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         if (EppyRoute.redirectToClassicIfChosen(this)) return;
         player = EppyPlayer.get(this);
         if (state == null) EppyRoute.handleSearch(this, getIntent());
+        if (state == null) pendingSkip = skipExtra(getIntent());
         if (state != null) pendingSheetTab = state.getInt("sheetTab", -1);
         if (state != null) pendingSheetState = state.getInt("sheetState", 2);
         else pendingSheetTab = getIntent() != null ? getIntent().getIntExtra(EppyRoute.EXTRA_SHEET_TAB, -1) : -1;
@@ -134,7 +135,14 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         if (intent.getBooleanExtra(EppyRoute.EXTRA_OPEN_PLAYER, false)) openPlayer();
         int tabExtra = intent.getIntExtra(EppyRoute.EXTRA_SHEET_TAB, -1);
         if (tabExtra >= 0) showPlayerSheet(tabExtra);
+        int[] sk = skipExtra(intent);
+        if (sk != null) {
+            app.morphe.extension.sabp.read.SkipPause.cancel(this);
+            showSkipPaused(sk);
+        }
     }
+
+    private int[] pendingSkip;
 
     private int pendingSheetTab = -1;
     private int pendingSheetState = 2;
@@ -221,6 +229,7 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         otherDeviceChecked = null;
         player.addListener(this);
         player.start();
+        app.morphe.extension.sabp.read.SkipPause.setForeground(this, true);
         refreshAll(true);
         handler.removeCallbacks(ticker);
         handler.post(ticker);
@@ -233,6 +242,8 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
         handler.removeCallbacks(ticker);
         player.removeListener(this);
         player.stop();
+        skipWatcher.reset();
+        app.morphe.extension.sabp.read.SkipPause.setForeground(this, false);
     }
 
     @Override
@@ -461,6 +472,12 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
                 PlayerPane p = overlayPane != null ? overlayPane : sidePane;
                 if (p != null && stateToOpen == app.morphe.extension.sabp.ui.PlayerSheet.HALF) p.restoreSheet(tabToOpen, stateToOpen);
             });
+        }
+        if (pendingSkip != null) {
+            final int[] sk = pendingSkip;
+            pendingSkip = null;
+            app.morphe.extension.sabp.read.SkipPause.cancel(this);
+            root.post(() -> showSkipPaused(sk));
         }
     }
 
@@ -1299,16 +1316,22 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
 
     /** Playback ran into a skipped passage: the Read tab or full screen offers a pause; elsewhere a short notice. */
     private void onSkipCrossed(int[] sk) {
+        int n = sk[1] - sk[0] + 1;
+        boolean pause = app.morphe.extension.sabp.read.SkipPause.shouldPause(app.morphe.extension.sabp.read.SkipPause.minWords(this), n);
+        if (pause && player.isPlaying()) player.playPause();
         if (fsTab != null) {
-            fsTab.onSkipCrossed(sk);
+            fsTab.onSkipCrossed(sk, pause);
             return;
         }
         PlayerPane p = overlayPane != null ? overlayPane : sidePane;
         if (p != null && p.readShowing()) {
-            p.readTab().onSkipCrossed(sk);
+            p.readTab().onSkipCrossed(sk, pause);
             return;
         }
-        int n = sk[1] - sk[0] + 1;
+        if (pause) {
+            showMessage("Paused at a skipped passage · " + n + " words", "Read", () -> showSkipPaused(sk), 0);
+            return;
+        }
         showMessage("Skipped passage: " + n + " words of the book aren't in the audiobook", "Read", () -> {
             openPlayer();
             PlayerPane q = overlayPane != null ? overlayPane : sidePane;
@@ -1316,6 +1339,23 @@ public class EppyActivity extends Activity implements Host, EppyPlayer.Listener 
             q.showSheet(app.morphe.extension.sabp.ui.PlayerSheet.TAB_READ);
             q.readTab().showPassage(sk);
         });
+    }
+
+    /** Paused at a skipped passage: the player on the Read tab, showing the passage with the Play bar. */
+    private void showSkipPaused(int[] sk) {
+        if (fsTab != null) {
+            fsTab.showPaused(sk);
+            return;
+        }
+        showPlayerSheet(app.morphe.extension.sabp.ui.PlayerSheet.TAB_READ);
+        PlayerPane q = overlayPane != null ? overlayPane : sidePane;
+        if (q != null) q.readTab().showPaused(sk);
+    }
+
+    /** The paused notification's Read: {first, last} of the passage, or null. */
+    private static int[] skipExtra(Intent i) {
+        if (i == null || !i.hasExtra(app.morphe.extension.sabp.read.SkipPause.EXTRA_FIRST)) return null;
+        return new int[]{i.getIntExtra(app.morphe.extension.sabp.read.SkipPause.EXTRA_FIRST, 0), i.getIntExtra(app.morphe.extension.sabp.read.SkipPause.EXTRA_LAST, 0)};
     }
 
     @Override
