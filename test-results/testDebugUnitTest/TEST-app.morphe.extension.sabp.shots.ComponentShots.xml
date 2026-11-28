@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.shots.ComponentShots" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:31:03.842Z" hostname="runnervm3lb7s" time="5.531">
+  <properties/>
+  <testcase name="icons" classname="app.morphe.extension.sabp.shots.ComponentShots" time="1.618"/>
+  <testcase name="components_font100" classname="app.morphe.extension.sabp.shots.ComponentShots" time="2.199"/>
+  <testcase name="components_font200" classname="app.morphe.extension.sabp.shots.ComponentShots" time="1.714"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[Nov 28, 2026 11:31:03 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: InputEventCompatHandler [2]: Input compatibility 413207127 is enabled for app.morphe.extension.sabp
+Nov 28, 2026 11:31:04 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:05 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: InputEventCompatHandler [2]: Input compatibility 413207127 is enabled for app.morphe.extension.sabp
+Nov 28, 2026 11:31:05 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:06 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:06 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:06 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:06 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:06 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:06 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:07 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:07 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:07 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:07 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:07 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:07 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: InputEventCompatHandler [2]: Input compatibility 413207127 is enabled for app.morphe.extension.sabp
+Nov 28, 2026 11:31:07 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: InputEventCompatHandler [2]: Input compatibility 413207127 is enabled for app.morphe.extension.sabp
+Nov 28, 2026 11:31:07 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:07 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:08 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:08 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:08 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:08 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:08 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:08 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:08 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:09 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:09 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+Nov 28, 2026 11:31:09 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: ImageReader_JNI [3]: Unable to acquire a buffer item, very likely client tried to acquire more than maxImages buffers
+]]></system-err>
+</testsuite>

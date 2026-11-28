@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.OtherDevicePositionTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:30:55.291Z" hostname="runnervm3lb7s" time="0.009">
+  <properties/>
+  <testcase name="readsThePcsPositionFile" classname="app.morphe.extension.sabp.OtherDevicePositionTest" time="0.001"/>
+  <testcase name="picksTheMostRecentlyPlayedOtherPosition" classname="app.morphe.extension.sabp.OtherDevicePositionTest" time="0.001"/>
+  <testcase name="refusesAnythingButSabpsClassesAndPlainValues" classname="app.morphe.extension.sabp.OtherDevicePositionTest" time="0.001"/>
+  <testcase name="readsSabpsBackup" classname="app.morphe.extension.sabp.OtherDevicePositionTest" time="0.005"/>
+  <testcase name="offersOnlyTheOtherDevicesPositionElsewhere" classname="app.morphe.extension.sabp.OtherDevicePositionTest" time="0.0"/>
+  <testcase name="noFileNameMeansNothingToOffer" classname="app.morphe.extension.sabp.OtherDevicePositionTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

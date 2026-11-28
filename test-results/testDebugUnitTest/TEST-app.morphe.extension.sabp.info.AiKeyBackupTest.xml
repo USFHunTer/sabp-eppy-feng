@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.info.AiKeyBackupTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:30:55.348Z" hostname="runnervm3lb7s" time="3.176">
+  <properties/>
+  <testcase name="keyIsNotBackedUp" classname="app.morphe.extension.sabp.info.AiKeyBackupTest" time="3.176"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (/home/runner/.gradle/caches/9.5.0/transforms/0adf9c78591b65d02a95d12ce9338524/transformed/byte-buddy-agent-1.18.14.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.resources.base.BasicStyleResourceItem <init>
+WARNING: Conflicting definitions of "fontFamily" in style "TextAppearance.Toast"
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.resources.base.BasicStyleResourceItem <init>
+WARNING: Conflicting definitions of "textColor" in style "NotificationAction"
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.resources.base.BasicStyleResourceItem <init>
+WARNING: Conflicting definitions of "fontFamily" in style "TextAppearance.DeviceDefault.Notification"
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.resources.base.BasicStyleResourceItem <init>
+WARNING: Conflicting definitions of "fontFamily" in style "TextAppearance.DeviceDefault.Notification.Title"
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.resources.base.BasicStyleResourceItem <init>
+WARNING: Conflicting definitions of "fontFamily" in style "TextAppearance.DeviceDefault.Notification.BigTitle"
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.resources.base.BasicStyleResourceItem <init>
+WARNING: Conflicting definitions of "fontFamily" in style "TextAppearance.DeviceDefault.Notification.Reply"
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.resources.base.BasicStyleResourceItem <init>
+WARNING: Conflicting definitions of "fontFamily" in style "TextAppearance.DeviceDefault.Notification.Info"
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.resources.base.BasicStyleResourceItem <init>
+WARNING: Conflicting definitions of "fontFamily" in style "TextAppearance.DeviceDefault.Notification.Time"
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: SystemFonts [2]: Loading font config from /home/runner/.gradle/caches/9.5.0/transforms/21e92e0443fe3a255036a2059a2253dc/transformed/layoutlib-runtime-16.2.3-linux/data/fonts/fonts.xml
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: SystemFonts [2]: Loading font config from /home/runner/.gradle/caches/9.5.0/transforms/21e92e0443fe3a255036a2059a2253dc/transformed/layoutlib-runtime-16.2.3-linux/data/fonts/font_fallback.xml
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: HWUI [2]: Using Fontation backend (prop=Auto)
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: PlatformAconfigPackage [3]: android.os.flagging.AconfigStorageReadException: ERROR_CANNOT_READ_STORAGE_FILE: Fail to mmap storage
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: PlatformAconfigPackage [3]: android.os.flagging.AconfigStorageReadException: ERROR_CANNOT_READ_STORAGE_FILE: Fail to mmap storage
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: PlatformAconfigPackage [3]: android.os.flagging.AconfigStorageReadException: ERROR_CANNOT_READ_STORAGE_FILE: Fail to mmap storage
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: PlatformAconfigPackage [3]: android.os.flagging.AconfigStorageReadException: ERROR_CANNOT_READ_STORAGE_FILE: Fail to mmap storage
+Nov 28, 2026 11:30:57 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: FeatureFlagsImplExport [4]: android.os.flagging.AconfigStorageReadException: ERROR_PACKAGE_NOT_FOUND: package android.xr cannot be found on the device
+Nov 28, 2026 11:30:58 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: FeatureFlagsImplExport [4]: android.os.flagging.AconfigStorageReadException: ERROR_PACKAGE_NOT_FOUND: package android.os.profiling.anomaly.flags cannot be found on the device
+Nov 28, 2026 11:30:58 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: InputEventCompatHandler [2]: Input compatibility 413207127 is enabled for app.morphe.extension.sabp
+]]></system-err>
+</testsuite>

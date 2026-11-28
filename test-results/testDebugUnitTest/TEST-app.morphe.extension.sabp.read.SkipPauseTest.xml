@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.read.SkipPauseTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:31:03.777Z" hostname="runnervm3lb7s" time="0.001">
+  <properties/>
+  <testcase name="offIsAlwaysAnOffer" classname="app.morphe.extension.sabp.read.SkipPauseTest" time="0.001"/>
+  <testcase name="everyPassagePauses" classname="app.morphe.extension.sabp.read.SkipPauseTest" time="0.0"/>
+  <testcase name="smallerThanTheMinimumIsAnOffer" classname="app.morphe.extension.sabp.read.SkipPauseTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

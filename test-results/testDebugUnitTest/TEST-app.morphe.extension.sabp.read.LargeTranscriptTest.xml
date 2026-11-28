@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.read.LargeTranscriptTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:30:58.547Z" hostname="runnervm3lb7s" time="5.016">
+  <properties/>
+  <testcase name="measure" classname="app.morphe.extension.sabp.read.LargeTranscriptTest" time="5.016"/>
+  <system-out><![CDATA[LargeTranscriptTest: 500000 words, 41667 segments, file 19.5 MB
+LargeTranscriptTest: cold load 318 ms, heap +50 MB (max heap 512 MB)
+LargeTranscriptTest: TranscriptSync.run 3554 ms, 35714 passages matched, 0 skipped
+]]></system-out>
+  <system-err><![CDATA[Nov 28, 2026 11:30:58 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: InputEventCompatHandler [2]: Input compatibility 413207127 is enabled for app.morphe.extension.sabp
+]]></system-err>
+</testsuite>

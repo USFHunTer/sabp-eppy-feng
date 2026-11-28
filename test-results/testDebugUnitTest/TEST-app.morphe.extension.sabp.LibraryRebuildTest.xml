@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.LibraryRebuildTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:30:55.261Z" hostname="runnervm3lb7s" time="0.027">
+  <properties/>
+  <testcase name="hiddenFoldersAreNotScanned" classname="app.morphe.extension.sabp.LibraryRebuildTest" time="0.008"/>
+  <testcase name="deletesTheBookListAndItsCopyOnly" classname="app.morphe.extension.sabp.LibraryRebuildTest" time="0.014"/>
+  <testcase name="anEmptyLibraryIsFine" classname="app.morphe.extension.sabp.LibraryRebuildTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

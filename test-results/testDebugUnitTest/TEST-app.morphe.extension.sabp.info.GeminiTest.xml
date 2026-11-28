@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.info.GeminiTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:30:58.526Z" hostname="runnervm3lb7s" time="0.003">
+  <properties/>
+  <testcase name="errorsReadWell" classname="app.morphe.extension.sabp.info.GeminiTest" time="0.0"/>
+  <testcase name="bookRequestCarriesOnlyTheExcerpts" classname="app.morphe.extension.sabp.info.GeminiTest" time="0.0"/>
+  <testcase name="blockedAnswerIsAFailure" classname="app.morphe.extension.sabp.info.GeminiTest" time="0.001"/>
+  <testcase name="thoughtPartsAreSkipped" classname="app.morphe.extension.sabp.info.GeminiTest" time="0.0"/>
+  <testcase name="webRequestUsesSearch" classname="app.morphe.extension.sabp.info.GeminiTest" time="0.0"/>
+  <testcase name="newestStableModelIsPicked" classname="app.morphe.extension.sabp.info.GeminiTest" time="0.001"/>
+  <testcase name="answerBecomesOneCleanLine" classname="app.morphe.extension.sabp.info.GeminiTest" time="0.001"/>
+  <testcase name="noFreeAllowanceIsNotCalledUsedUp" classname="app.morphe.extension.sabp.info.GeminiTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

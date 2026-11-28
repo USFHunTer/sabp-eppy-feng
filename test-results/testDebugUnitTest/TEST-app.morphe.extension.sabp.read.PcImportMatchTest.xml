@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.read.PcImportMatchTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:31:03.565Z" hostname="runnervm3lb7s" time="0.051">
+  <properties/>
+  <testcase name="theLeftOutPassageIsTheOneSkippedPassage" classname="app.morphe.extension.sabp.read.PcImportMatchTest" time="0.051"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[Nov 28, 2026 11:31:03 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: InputEventCompatHandler [2]: Input compatibility 413207127 is enabled for app.morphe.extension.sabp
+Nov 28, 2026 11:31:03 AM app.cash.paparazzi.internal.PaparazziLogger logAndroidFramework
+INFO: eppy [2]: 11-28 11:31:03  [transcribe] imported clip.transcript.json (5 segments)
+]]></system-err>
+</testsuite>

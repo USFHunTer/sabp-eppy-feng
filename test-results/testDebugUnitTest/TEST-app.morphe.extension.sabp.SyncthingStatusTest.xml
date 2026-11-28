@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.SyncthingStatusTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:30:55.301Z" hostname="runnervm3lb7s" time="0.045">
+  <properties/>
+  <testcase name="folders" classname="app.morphe.extension.sabp.SyncthingStatusTest" time="0.042"/>
+  <testcase name="findsTheFolderHoldingTheBook" classname="app.morphe.extension.sabp.SyncthingStatusTest" time="0.001"/>
+  <testcase name="devices" classname="app.morphe.extension.sabp.SyncthingStatusTest" time="0.001"/>
+  <testcase name="bookFolderPaths" classname="app.morphe.extension.sabp.SyncthingStatusTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

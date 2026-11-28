@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="app.morphe.extension.sabp.read.XhtmlTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-28T11:31:03.838Z" hostname="runnervm3lb7s" time="0.002">
+  <properties/>
+  <testcase name="skipsImageDescriptions" classname="app.morphe.extension.sabp.read.XhtmlTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
