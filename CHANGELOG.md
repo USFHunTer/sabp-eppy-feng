@@ -1,5 +1,14 @@
 # Release notes
 
+## v0.19.1: hidden folders are never books, on every device
+
+- **Fixed: Syncthing's old copies still showed up as books on some devices.** v0.18.1's fix that makes SABP's folder
+  scan skip hidden folders (`.stversions`, `.stfolder`, `.trash`) didn't apply on a phone patched with Morphe Manager:
+  Diagnostics → Patch hooks said `skipHiddenFolders — missing: no unique match`, so **Rebuild library** listed the
+  `.stversions` copies again. eppy now finds SABP's folder scan by reading its classes directly instead of through
+  the patcher's string index. If it still can't, Diagnostics says which step missed. After updating, run **Rebuild
+  library** once.
+
 ## v0.19.0: pause at skipped passages
 
 - **New: Pause at skipped passages** (Read tab ⋮). When playback runs past a passage of the book that isn't in the

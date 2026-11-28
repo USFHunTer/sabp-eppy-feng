@@ -245,25 +245,29 @@ private val eppyUiBytecodePatch = bytecodePatch(
         }
         // SABP's folder lister (the Full scan walks folders with it): for each subfolder it does
         // `list.add(new Item(name))` and goes back to its loop, hidden folders included, so Syncthing's
-        // .stversions copies became books. Found by the two strings only it has.
+        // .stversions copies became books. Found by the two strings only it has (g7.F in 11.7.8), by
+        // walking the classes themselves: classDefByStrings' index came back without it on a phone
+        // patched with Morphe Manager (2026-11-28) though stock 11.7.8 has it. Each step that can miss
+        // throws its own message, which Diagnostics → Patch hooks shows.
         val folderAdd = hooks.optional("skipHiddenFolders") {
-            classDefByStrings("vnd.android.document/directory").flatMap { it.methods }.filter {
-                it.hasString("vnd.android.document/directory") && it.hasString("info.txt")
-            }.singleOrNull()?.let { m ->
-                val insns = m.implementation?.instructions?.toList().orEmpty()
-                val inits = insns.withIndex().filter { (_, i) ->
-                    i.opcode == com.android.tools.smali.dexlib2.Opcode.INVOKE_DIRECT &&
-                        ((i as ReferenceInstruction).reference as MethodReference).let { r ->
-                            r.name == "<init>" && r.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/String;")
-                        }
-                }.map { it.index }
-                val at = inits.singleOrNull() ?: return@let null
-                val add = (insns.getOrNull(at + 1) as? ReferenceInstruction)?.reference as? MethodReference
-                val name = (insns[at] as com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction35c).registerD
-                if (add?.name == "add" && insns.getOrNull(at + 2)?.opcode?.name?.startsWith("GOTO") == true && name < 16) {
-                    Triple(m, at, name)
-                } else null
+            fun Method.listsFolders() = hasString("vnd.android.document/directory") && hasString("info.txt")
+            val m = classDefByOrNull { c -> c.methods.any { it.listsFolders() } }
+                ?.methods?.filter { it.listsFolders() }?.singleOrNull()
+                ?: error("no single method with the folder-list strings")
+            val insns = m.implementation?.instructions?.toList().orEmpty()
+            // `new Item(name)`: the String constructor whose object goes straight into ArrayList.add.
+            val adds = insns.indices.filter { i ->
+                val init = (insns[i] as? ReferenceInstruction)?.reference as? MethodReference
+                val next = (insns.getOrNull(i + 1) as? ReferenceInstruction)?.reference as? MethodReference
+                insns[i].opcode == com.android.tools.smali.dexlib2.Opcode.INVOKE_DIRECT &&
+                    init?.name == "<init>" && init.parameterTypes.map(CharSequence::toString) == listOf("Ljava/lang/String;") &&
+                    next?.name == "add" && next.definingClass == "Ljava/util/ArrayList;"
             }
+            val at = adds.singleOrNull() ?: error("${adds.size} `new Item(name)` + add in ${m.definingClass}->${m.name}")
+            val name = (insns[at] as com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction35c).registerD
+            check(insns.getOrNull(at + 2)?.opcode?.name?.startsWith("GOTO") == true) { "no goto after the folder add" }
+            check(name < 16) { "folder name in v$name" }
+            Triple(m, at, name)
         }
         val libraryOnCreate = if (fullScan == null) null else libraryActivity.methods.singleOrNull {
             it.name == "onCreate" && it.parameterTypes.map(CharSequence::toString) == listOf("Landroid/os/Bundle;")

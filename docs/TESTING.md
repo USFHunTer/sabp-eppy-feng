@@ -122,6 +122,9 @@ On a device whose library folder was reorganised (the tablet, 2026-11-27):
   transcribed* in Read along, with no **Download speech model** button.
 - v0.18.1: with a `.stversions` folder holding old book copies (the tablet), Rebuild library lists each book once;
   Diagnostics → Patch hooks lists `skipHiddenFolders=ok`.
+- v0.19.1: patched with Morphe Manager on the phone (where v0.18.1–v0.19.0 said `skipHiddenFolders — missing: no
+  unique match`), Diagnostics shows `skipHiddenFolders` ✓, and with a `.stversions` folder of old book
+  copies present, Rebuild library lists each book once. If it's still ✗, the message names the step that missed.
 - Library manager (no rebuild): add a book folder, Full scan there, back to eppy: the book is listed and stays
   listed after playing and pausing another book (the old list no longer overwrites it).
 
