@@ -25,6 +25,9 @@ _Avoid_: force read, read all the file.
 
 **Skipped-passage crossing**: the moment normal playback reaches a skipped passage and the narration carries on after it. Seeking or jumping over a skipped passage is not a crossing.
 
+**Pause at skipped passages**: a switch on each device (phone, tablet, PC), for every book, that makes a skipped-passage crossing pause playback and tell the listener, even when the app isn't in front, instead of only offering a pause. A minimum size (any, 50, 100 or 200 words) leaves smaller passages with only the offer.
+_Avoid_: pause on missing text, auto-pause.
+
 **Full-screen reading**: the read-along text over the whole screen, with a mini player at the bottom, opened from the Read tab or the Read chip. The Read tab in the player stays as it is.
 _Avoid_: reading mode, full-screen player.
 
